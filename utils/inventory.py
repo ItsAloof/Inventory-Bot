@@ -37,7 +37,8 @@ class Inventory():
     def save(self) -> dict:
         return {
             "owner": self._owner,
-            "items": [item.save() for item in self._items]
+            "items": [item.save() for item in self._items],
+            "limit": self._limit
         }
     
     def can_add_item(self) -> bool:

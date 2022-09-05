@@ -11,32 +11,47 @@ class InventoryBot(commands.Bot):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.load_cogs()
-        self._inventories = {}
+        self._guildInventories: dict[int, GuildInventory] = self.load_inventories()
 
     def load_cogs(self):
+        """
+        Loads all cogs in the Cogs folder
+        """
         for root, directories, files in os.walk("Cogs"):
             for file in files:
                 if file.endswith(".py"):
                     self.load_extension(f"Cogs.{file[:-3]}")
     
     def get_guild_inventories(self, guild: int) -> GuildInventory | None:
-        if guild in self.inventories:
-            return self.inventories[guild]
+        """
+        Gets the guild inventories
+
+        Parameters
+        ----------
+        guild : `int`
+            The guild id
+        
+        Returns
+        -------
+        `GuildInventory` | `None`
+            The guild inventory or None if it doesn't exist
+        """
+        if guild in self._guildInventories:
+            return self._guildInventories[guild]
         return None
 
-    @property
     def save_inventories(self):
-        data = [guild.save() for guild in self.inventories]
-        with open("inventories.json", "w") as f:
+        data = [self._guildInventories[guildInv].save() for guildInv in self._guildInventories]
+        with open("./resources/inventories.json", "w") as f:
             json.dump(data, f, indent=4)
 
     @property
-    def inventories(self) -> list[GuildInventory]:
-        return self._inventories
+    def guildInventories(self) -> list[GuildInventory]:
+        return self._guildInventories
     
-    @inventories.setter
+    @guildInventories.setter
     def inventories(self, value: list[GuildInventory]) -> None:
-        self._inventories = value
+        self._guildInventories = value
 
 
     def remove_guild(self, guild: int):
@@ -44,16 +59,17 @@ class InventoryBot(commands.Bot):
 
 
     async def on_ready(self):
-        print("Bot is ready")
+        for guild in self.guilds:
+            if guild.id not in self._guildInventories:
+                self.add_guild(guild)
     
     def load_inventories(self) -> dict:
-        with open("inventories.json", "r") as f:
+        with open("./resources/inventories.json", "r") as f:
             data = json.load(f)
-        print(data)
-        # return {int(guild["guildId"]): GuildInventory.load(guild) for guild in data}
+        return {int(guild["guildId"]): GuildInventory.load(guild) for guild in data}
 
     def add_guild(self, guild: Guild):
-        self.inventories[guild.id] = GuildInventory(guildId=guild.id, guildName=guild.name)
+        self._guildInventories[guild.id] = GuildInventory(guildId=guild.id, guildName=guild.name)
 
 
 def main():

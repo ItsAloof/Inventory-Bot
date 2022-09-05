@@ -12,21 +12,23 @@ class InventoryCmd(commands.Cog):
         if user:
             await interaction.response.send_message(f"Viewing {user}'s inventory")
         else:
-
-            await interaction.response.send_message(f"Your inventory has {self.bot.get_guild_inventories(interaction.guild_id).get_inventory(interaction.user)} items", ephemeral=True)
+            inventory = self.bot.get_guild_inventories(interaction.guild_id).get_inventory(interaction.user)
+            await interaction.response.send_message(f"Your inventory has {inventory} items: {[item for item in inventory.items]}", ephemeral=True)
 
     @slash_command(name="additem", description="Add an item to your inventory", guild_ids=[1001667368801550439])
     async def additem(self, interaction: Interaction, 
     name: str = SlashOption(name="name", description="The name of the item", required=True), 
     description: str = SlashOption(name="description", description="The description of the item", required=True), 
     value: int = SlashOption(name="value", description="The value of the item", required=True)):
-        item = Item(name=name, description=description, value=value)
+
         user = interaction.user
         guild = self.bot.get_guild_inventories(interaction.guild.id)
+        item = Item(name=name, description=description, value=value, currency=guild.currency)
         if guild:
             inventory = guild.get_inventory(user)
             if inventory:
                 inventory.add_item(item)
+                self.bot.save_inventories()
                 await interaction.response.send_message(f"Added {item.name} to your inventory", ephemeral=True)
                 return
         await interaction.response.send_message("Could not find inventory", ephemeral=True)

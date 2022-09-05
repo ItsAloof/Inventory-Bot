@@ -7,13 +7,6 @@ class Events(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_ready(self):
-        # self.bot.inventories(self.bot.load_inventories())
-        for guild in self.bot.guilds:
-            if guild.id not in self.bot.inventories:
-                self.bot.add_guild(guild)
-
-    @commands.Cog.listener()
     async def on_guild_join(self, guild):
         pass
 
