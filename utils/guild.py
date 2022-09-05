@@ -28,6 +28,8 @@ class GuildInventory():
     @inventory_limit.setter
     def inventory_limit(self, value: int) -> None:
         self._inventory_limit = value
+        for inventory in self._inventories:
+            inventory.limit = value
     
     @property
     def currency(self) -> str:

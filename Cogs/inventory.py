@@ -1,4 +1,5 @@
 from discord import Interaction, SlashCommandOption, SlashOption
+from nextcord import Permissions
 from nextcord.ext import commands
 from nextcord.application_command import slash_command
 from InventoryBot import InventoryBot
@@ -16,7 +17,7 @@ class InventoryCmd(commands.Cog):
             inventory = self.bot.get_guild_inventories(interaction.guild_id).get_inventory(interaction.user)
             await interaction.response.send_message(str(inventory), ephemeral=True)
 
-    @slash_command(name="additem", description="Add an item to your inventory", guild_ids=[1001667368801550439])
+    @slash_command(name="additem", description="Add an item to your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
     async def additem(self, interaction: Interaction, 
     name: str = SlashOption(name="name", description="The name of the item", required=True), 
     description: str = SlashOption(name="description", description="The description of the item", required=True), 
@@ -34,7 +35,7 @@ class InventoryCmd(commands.Cog):
                 return
         await interaction.response.send_message("Could not find inventory", ephemeral=True)
 
-    @slash_command(name="removeitem", description="Remove an item from your inventory", guild_ids=[1001667368801550439])
+    @slash_command(name="removeitem", description="Remove an item from your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
     async def removeitem(self, interaction: Interaction, index: int = SlashOption(name="index", description="Which item to remove starting from 1 to your inventory size", required=True)):
         user = interaction.user
         guild = self.bot.get_guild_inventories(interaction.guild.id)
@@ -54,7 +55,7 @@ class InventoryCmd(commands.Cog):
                     return
         await interaction.response.send_message("Could not find inventory", ephemeral=True)
 
-    @slash_command(name="clearinventory", description="Clear your inventory", guild_ids=[1001667368801550439])
+    @slash_command(name="clearinventory", description="Clear your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
     async def clearinventory(self, interaction: Interaction):
         user = interaction.user
         guild = self.bot.get_guild_inventories(interaction.guild.id)
@@ -65,6 +66,30 @@ class InventoryCmd(commands.Cog):
                 self.bot.save_inventories()
                 await interaction.response.send_message("Cleared your inventory", ephemeral=True)
                 return
+        await interaction.response.send_message("Could not find inventory", ephemeral=True)
+
+    @slash_command(name="set", description="Used to set values for the guild", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
+    async def set(self, interaction: Interaction):
+        pass
+
+    @set.subcommand(name="currency", description="Set the currency for the guild")
+    async def set_currency(self, interaction: Interaction, currency: str = SlashOption(name="currency", description="The currency to set", required=True)):
+        guild = self.bot.get_guild_inventories(interaction.guild.id)
+        if guild:
+            guild.currency = currency
+            self.bot.save_inventories()
+            await interaction.response.send_message(f"Set currency to {currency}", ephemeral=True)
+            return
+        await interaction.response.send_message("Could not find inventory", ephemeral=True)
+    
+    @set.subcommand(name="maxitems", description="Set the max items for the guild")
+    async def set_maxitems(self, interaction: Interaction, maxitems: int = SlashOption(name="maxitems", description="The max items to set", required=True)):
+        guild = self.bot.get_guild_inventories(interaction.guild.id)
+        if guild:
+            guild.inventory_limit = maxitems
+            self.bot.save_inventories()
+            await interaction.response.send_message(f"Set max items to {maxitems}", ephemeral=True)
+            return
         await interaction.response.send_message("Could not find inventory", ephemeral=True)
 
 def setup(bot: InventoryBot):

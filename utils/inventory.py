@@ -61,7 +61,6 @@ class Inventory():
             return item
         else:
             return None
-            
     def clear(self) -> None:
         self._items.clear()
     
