@@ -57,4 +57,4 @@ class Item():
         return self.name
     
     def __str__(self):
-        return f"{self._name}: {self._description} (Value: {self._currency}" + "{:,}".format(self._value)
+        return f"{self._name}: {self._description}\nValue: {self._currency}" + "{:,}".format(self._value)

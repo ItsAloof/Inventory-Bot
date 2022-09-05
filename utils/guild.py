@@ -54,6 +54,7 @@ class GuildInventory():
         for inventory in self._inventories:
             if inventory.owner == user.id:
                 return inventory
+        print(f"Could not find inventory for {user.name} ({user.id})")
         inventory = self.create_inventory(owner=user)
         return inventory
     

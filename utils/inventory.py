@@ -2,10 +2,10 @@ from utils.item import Item
 
 
 class Inventory():
-    def __init__(self, owner: int, name: str, limit: int = None):
+    def __init__(self, owner: int, name: str, limit: int = None, items: list[Item] = None) -> None:
         self._owner: int = owner
         self._name: str = name
-        self._items: list[Item] = []
+        self._items: list[Item] = items if items else []
         self._limit = limit
     
     @property
@@ -32,13 +32,14 @@ class Inventory():
 
     @staticmethod
     def load(data: dict) -> 'Inventory':
-        return Inventory(data["owner"], data["limit"], [Item.load(item) for item in data["items"]])
+        return Inventory(owner=data["owner"], name=data["name"], limit=data["limit"], items=[Item.load(item) for item in data["items"]])
         
     def save(self) -> dict:
         return {
             "owner": self._owner,
             "items": [item.save() for item in self._items],
-            "limit": self._limit
+            "limit": self._limit,
+            "name": self._name
         }
     
     def can_add_item(self) -> bool:
@@ -54,4 +55,4 @@ class Inventory():
             return False
     
     def __str__(self) -> str:
-        return f"{self._name}'s Inventory:\n{len(self.items)}/{self.limit}"
+        return f"**{self._name}'s Inventory**\n{len(self.items)}/{self.limit if self.limit else '∞'} Items:\n" + "\n".join([f"{item}" for item in self.items])

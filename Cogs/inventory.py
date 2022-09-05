@@ -7,13 +7,14 @@ class InventoryCmd(commands.Cog):
     def __init__(self, bot: InventoryBot):
         self.bot = bot
     
+    
     @slash_command(name="inventory", description="View your inventory", guild_ids=[1001667368801550439])
     async def inventory(self, interaction: Interaction, user: str = SlashOption(name="user", description="The user to view the inventory of", required=False)):
         if user:
             await interaction.response.send_message(f"Viewing {user}'s inventory")
         else:
             inventory = self.bot.get_guild_inventories(interaction.guild_id).get_inventory(interaction.user)
-            await interaction.response.send_message(f"Your inventory has {inventory} items: {[item for item in inventory.items]}", ephemeral=True)
+            await interaction.response.send_message(str(inventory), ephemeral=True)
 
     @slash_command(name="additem", description="Add an item to your inventory", guild_ids=[1001667368801550439])
     async def additem(self, interaction: Interaction, 
