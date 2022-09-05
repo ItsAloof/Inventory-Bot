@@ -61,6 +61,9 @@ class Inventory():
             return item
         else:
             return None
+            
+    def clear(self) -> None:
+        self._items.clear()
     
     def __str__(self) -> str:
         return f"**{self._name}'s Inventory**\n{len(self.items)}/{self.limit if self.limit else '∞'} Items:\n" + "\n".join([f"{item}" for item in self.items])

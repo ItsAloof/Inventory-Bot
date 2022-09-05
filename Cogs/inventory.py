@@ -54,6 +54,19 @@ class InventoryCmd(commands.Cog):
                     return
         await interaction.response.send_message("Could not find inventory", ephemeral=True)
 
+    @slash_command(name="clearinventory", description="Clear your inventory", guild_ids=[1001667368801550439])
+    async def clearinventory(self, interaction: Interaction):
+        user = interaction.user
+        guild = self.bot.get_guild_inventories(interaction.guild.id)
+        if guild:
+            inventory = guild.get_inventory(user)
+            if inventory:
+                inventory.clear()
+                self.bot.save_inventories()
+                await interaction.response.send_message("Cleared your inventory", ephemeral=True)
+                return
+        await interaction.response.send_message("Could not find inventory", ephemeral=True)
+
 def setup(bot: InventoryBot):
     print(f"Loaded {__name__}")
     bot.add_cog(InventoryCmd(bot))
