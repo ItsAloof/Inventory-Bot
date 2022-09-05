@@ -50,7 +50,7 @@ class GuildInventory():
             "currency": self.currency,
             "inventories": [inventory.save() for inventory in self._inventories] if self._inventories else [],
             "inventory_limit": self.inventory_limit
-        }        
+        }      
 
     def get_inventory(self, user: User) -> Inventory:
         for inventory in self._inventories:
