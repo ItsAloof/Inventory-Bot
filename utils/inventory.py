@@ -53,6 +53,14 @@ class Inventory():
             return True
         else:
             return False
+
+    def remove_item(self, index: int) -> Item | None:
+        if index - 1 < len(self.items):
+            item = self.items[item - 1]
+            self.items.remove(item)
+            return item
+        else:
+            return None
     
     def __str__(self) -> str:
         return f"**{self._name}'s Inventory**\n{len(self.items)}/{self.limit if self.limit else '∞'} Items:\n" + "\n".join([f"{item}" for item in self.items])

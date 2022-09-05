@@ -34,6 +34,26 @@ class InventoryCmd(commands.Cog):
                 return
         await interaction.response.send_message("Could not find inventory", ephemeral=True)
 
+    @slash_command(name="removeitem", description="Remove an item from your inventory", guild_ids=[1001667368801550439])
+    async def removeitem(self, interaction: Interaction, index: int = SlashOption(name="index", description="Which item to remove starting from 1 to your inventory size", required=True)):
+        user = interaction.user
+        guild = self.bot.get_guild_inventories(interaction.guild.id)
+        if guild:
+            inventory = guild.get_inventory(user)
+            if len(inventory.items) == 0:
+                await interaction.response.send_message("Your inventory is empty", ephemeral=True)
+                return
+            if inventory:
+                item = inventory.remove_item(index)
+                if item:
+                    self.bot.save_inventories()
+                    await interaction.response.send_message(f"Removed {item.name} from your inventory", ephemeral=True)
+                    return
+                else:
+                    await interaction.response.send_message(f"Invalid number, please enter a number between 1 and {len(inventory.items)}", ephemeral=True)
+                    return
+        await interaction.response.send_message("Could not find inventory", ephemeral=True)
+
 def setup(bot: InventoryBot):
     print(f"Loaded {__name__}")
     bot.add_cog(InventoryCmd(bot))
