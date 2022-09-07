@@ -1,5 +1,5 @@
 from discord import Interaction, SlashCommandOption, SlashOption
-from nextcord import Permissions
+from nextcord import Permissions, User
 from nextcord.ext import commands
 from nextcord.application_command import slash_command
 from InventoryBot import InventoryBot
@@ -21,9 +21,10 @@ class InventoryCmd(commands.Cog):
     async def additem(self, interaction: Interaction, 
     name: str = SlashOption(name="name", description="The name of the item", required=True), 
     description: str = SlashOption(name="description", description="The description of the item", required=True), 
-    value: int = SlashOption(name="value", description="The value of the item", required=True)):
+    value: int = SlashOption(name="value", description="The value of the item", required=True),
+    username: User = SlashOption(name="user", description="The user to add the item to", required=False)):
 
-        user = interaction.user
+        user = interaction.user if not username else username
         guild = self.bot.get_guild_inventories(interaction.guild.id)
         item = Item(name=name, description=description, value=value, currency=guild.currency)
         if guild:
@@ -36,35 +37,41 @@ class InventoryCmd(commands.Cog):
         await interaction.response.send_message("Could not find inventory", ephemeral=True)
 
     @slash_command(name="removeitem", description="Remove an item from your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
-    async def removeitem(self, interaction: Interaction, index: int = SlashOption(name="index", description="Which item to remove starting from 1 to your inventory size", required=True)):
-        user = interaction.user
+    async def removeitem(self, interaction: Interaction, index: int = SlashOption(name="index", 
+    description="Which item to remove starting from 1 to your inventory size", required=True), 
+    username: User = SlashOption(name="user", description="The user to remove the item from", required=False)):
+    
+        user = interaction.user if not username else username
         guild = self.bot.get_guild_inventories(interaction.guild.id)
         if guild:
             inventory = guild.get_inventory(user)
             if len(inventory.items) == 0:
-                await interaction.response.send_message("Your inventory is empty", ephemeral=True)
+                msg = "Your inventory is empty" if user == interaction.user else f"{user.name}'s inventory is empty"
+                await interaction.response.send_message(msg, ephemeral=True)
                 return
             if inventory:
                 item = inventory.remove_item(index)
                 if item:
                     self.bot.save_inventories()
-                    await interaction.response.send_message(f"Removed {item.name} from your inventory", ephemeral=True)
+                    msg = f"Removed {item.name} from your inventory" if user == interaction.user else f"Removed {item.name} from {user.name}'s inventory"
+                    await interaction.response.send_message(msg, ephemeral=True)
                     return
                 else:
                     await interaction.response.send_message(f"Invalid number, please enter a number between 1 and {len(inventory.items)}", ephemeral=True)
                     return
         await interaction.response.send_message("Could not find inventory", ephemeral=True)
 
-    @slash_command(name="clearinventory", description="Clear your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
-    async def clearinventory(self, interaction: Interaction):
-        user = interaction.user
+    @slash_command(name="clearinventory", description="Clear your or another users inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
+    async def clearinventory(self, interaction: Interaction, username: User = SlashOption(name="user", description="The user to clear the inventory of", required=False)):
+        user = interaction.user if not username else username
         guild = self.bot.get_guild_inventories(interaction.guild.id)
         if guild:
             inventory = guild.get_inventory(user)
             if inventory:
                 inventory.clear()
                 self.bot.save_inventories()
-                await interaction.response.send_message("Cleared your inventory", ephemeral=True)
+                msg = f"Your inventory has been cleared" if user == interaction.user else f"{user}'s inventory has been cleared"
+                await interaction.response.send_message(msg, ephemeral=True)
                 return
         await interaction.response.send_message("Could not find inventory", ephemeral=True)
 
