@@ -1,5 +1,5 @@
 from nextcord.ext import commands
-from InventoryBot import InventoryBot
+from main import InventoryBot
 
 
 class Events(commands.Cog):

@@ -1,5 +1,5 @@
 from nextcord.ext import commands
-from InventoryBot import InventoryBot
+from main import InventoryBot
 from nextcord.application_command import slash_command
 from nextcord import Interaction, SlashOption, Permissions, User
 class Economy(commands.Cog):

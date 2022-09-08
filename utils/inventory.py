@@ -25,6 +25,18 @@ class Inventory():
     @balance.setter
     def balance(self, value: int) -> None:
         self._balance = value
+
+    def deposit(self, amount: int) -> bool:
+        if amount > 0:
+            self._balance += amount
+            return True
+        return False
+    
+    def withdraw(self, amount: int) -> bool:
+        if amount > 0 and amount <= self._balance:
+            self._balance -= amount
+            return True
+        return False
     
     def format_balance(self, currency: str) -> str:
         """Returns a formatted string of a users balance"""

@@ -2,7 +2,7 @@ from discord import Interaction, SlashCommandOption, SlashOption
 from nextcord import Permissions, User
 from nextcord.ext import commands
 from nextcord.application_command import slash_command
-from InventoryBot import InventoryBot
+from main import InventoryBot
 from utils.item import Item
 class InventoryCmd(commands.Cog):
     def __init__(self, bot: InventoryBot):
