@@ -1,3 +1,5 @@
+import json
+
 class Item():
     def __init__(self, name: str, description: str, value: int, currency: str) -> None:
         self._name = name
@@ -44,6 +46,9 @@ class Item():
     @staticmethod
     def load(data: dict) -> 'Item':
         return Item(data["name"], data["description"], data["value"], data["currency"])
+    
+    def toJSON(self):
+        return json.dumps(self, default= lambda o: o.__dict__, sort_keys=True)
     
     def save(self) -> dict:
         return {
