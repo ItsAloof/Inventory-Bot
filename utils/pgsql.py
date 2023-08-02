@@ -1,6 +1,7 @@
 from psycopg2.extensions import connection, cursor
 import psycopg2
 from configparser import ConfigParser
+from typing import List, Dict
 
 class Query():
     def __init__(self) -> None:
@@ -107,3 +108,22 @@ class Query():
         result = cur.fetchone()
         print(result)
         return result
+    
+    def update_user(self, guild_id, user_id, userdata: Dict[List[Dict]]):
+        """Update a user within the database
+
+        Args:
+            guild_id (:class:`str`): The id for the guild the user is in
+            user_id (:class:`str`): The unique id for the user within discord
+            userdata (:class:`Dict`): the data to be updated
+        """
+        
+        sql = """
+        UPDATE Guild%s
+        SET Balance = %s,
+            Items = %s
+        WHERE MemberID = %s
+        """
+        cur = self.conn.cursor()
+        
+        cur.execute(sql, (guild_id, userdata['balance'], userdata['items'],))

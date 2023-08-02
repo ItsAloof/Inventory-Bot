@@ -1,4 +1,5 @@
 from nextcord.ext import commands
+from nextcord import Guild
 from main import InventoryBot
 
 
@@ -7,8 +8,8 @@ class Events(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_guild_join(self, guild):
-        pass
+    async def on_guild_join(self, guild: Guild):
+        guild.id
 
 
 def setup(bot: InventoryBot):
