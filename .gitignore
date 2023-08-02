@@ -125,6 +125,7 @@ dmypy.json
 
 # resource files
 resources/
+tests/
 inventory-bot/pyvenv.cfg
 inventory-bot/Scripts/activate
 inventory-bot/Scripts/activate.bat
@@ -136,3 +137,4 @@ inventory-bot/Scripts/pip3.11.exe
 inventory-bot/Scripts/pip3.exe
 inventory-bot/Scripts/python.exe
 inventory-bot/Scripts/pythonw.exe
+database.ini
