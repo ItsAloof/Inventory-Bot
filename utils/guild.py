@@ -60,6 +60,8 @@ class GuildInventory():
         inventory = self.create_inventory(owner=user)
         return inventory
     
+    def get_baltop(self) -> list:
+        return sorted(self._inventories, key=lambda x: x.balance, reverse=True)[:10]
     
     def create_inventory(self, owner: User) -> Inventory:
         inventory = Inventory(owner=owner.id, name=owner.name, limit=self.inventory_limit)

@@ -16,6 +16,10 @@ class Inventory():
     @property
     def items(self) -> list[Item]:
         return self._items
+    
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def balance(self) -> int:

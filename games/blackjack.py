@@ -1,7 +1,7 @@
 import random
 from typing import Text
 from discord import Interaction
-from nextcord import User, TextChannel
+from nextcord import User, TextChannel, Embed
 import nextcord
 class Blackjack(nextcord.ui.View):
     children = []
@@ -43,18 +43,25 @@ class Blackjack(nextcord.ui.View):
         return self._won
 
     @property
-    def get_total(self, player: bool) -> int:
-        total = 0
-        if player:
-            for card in self._player_hand:
-                total += self.deck[card]
-        else:
-            for card in self._dealer_hand:
-                total += self.deck[card]
-        return total
+    def get_players_hand(self) -> int:
+        return sum(self._player_hand)
+
+    @property
+    def get_dealers_hand(self) -> int:
+        return sum(self._dealer_hand)
 
     def start(self):
         pass
+
+    def table(self) -> Embed:
+        '''
+        Returns the instance of the game table in the form of a Discord :class:`Embed`.
+        '''
+        embed = Embed(title="Blackjack", color=0x060606)
+        embed.add_field(name="Dealers Hand", value=self.get_dealers_hand(), inline=False)
+        embed.add_field(name="Players Hand", value=self.get_players_hand(), inline=False)
+        return embed
+        
 
     @nextcord.ui.button(label="Hit", style=nextcord.ButtonStyle.green)
     def hit(self, interaction: Interaction) -> int:
@@ -63,6 +70,7 @@ class Blackjack(nextcord.ui.View):
         if card == 1:
             card = card if sum(self._player_hand) + 11 > 21 else 11
         self._player_hand.append(card)
+        
 
     @nextcord.ui.button(label="Stand", style=nextcord.ButtonStyle.red)
     def stand(self, interaction: nextcord.Interaction):
@@ -72,28 +80,21 @@ class Blackjack(nextcord.ui.View):
             self._dealer_hand.append(card)
             self.hit(False)
 
-    def isGameover(self):
-        if self.busted(True) or self.busted(False) or self.is_blackjack(True) or self.is_blackjack(False):
-            self.gameover()
+    def isGameover(self, interaction: Interaction):
+        if self.get_players_hand() > 21:
+            self._won = False
             return True
-
-    def busted(self, player: bool):
-        if player:
-            if self.get_total(True) > 21:
-                return True
+        elif self.get_dealers_hand() > 21:
+            self._won = True
+            return True
+        elif self.get_players_hand() == 21:
+            self._won = True
+            return True
+        elif self.get_dealers_hand() == 21:
+            self._won = False
+            return True
         else:
-            if self.get_total(False) > 21:
-                return True
-        return False
-
-    def is_blackjack(self, player: bool) -> bool:
-        if player:
-            winner = self.get_total(True) == 21
-            if winner:
-                self._won = True
-            return winner
-        else:
-            return self.get_total(False) == 21
+            return False
 
     def gameover(self):
         if self.won:
