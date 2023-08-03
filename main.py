@@ -4,6 +4,7 @@ import sys
 from discord import ApplicationError, Guild, Interaction
 from nextcord.ext import commands
 import nextcord
+from configparser import ConfigParser
 
 from utils.guild import GuildInventory
 
@@ -71,13 +72,21 @@ class InventoryBot(commands.Bot):
     def add_guild(self, guild: Guild):
         self._guildInventories[guild.id] = GuildInventory(guildId=guild.id, guildName=guild.name)
 
+def _load_config(filename="config.ini", section="discord"):
+    parser = ConfigParser()
+    parser.read(filename)
+    if not parser.has_section(section):
+        raise Exception(f'Section {section} not found in the {filename} file')
+    
+    return dict(parser.items(section)).get('public-key')
 
 def main():
+    key = _load_config()
     # Create the bot
     bot = InventoryBot(intents=nextcord.Intents.all(), status=nextcord.Status.online, activity=nextcord.Game("InventoryBot"))
 
     # Run the bot
-    bot.run("NDQ2NTE2MTIzOTI0NDMwODU4.GPoD8P.s5Wbyv0MF92fx4ms67bp7B-Xzx0b12qbNJ0Q8E", reconnect=True)
+    bot.run(key, reconnect=True)
 
 if __name__ == "__main__":
     main()

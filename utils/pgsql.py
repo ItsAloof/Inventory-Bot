@@ -7,7 +7,7 @@ class Query():
     def __init__(self) -> None:
         self._connect()
         
-    def _config(self, filename='database.ini', section='postgresql'):
+    def _config(self, filename='config.ini', section='postgresql'):
         parser = ConfigParser()
         parser.read(filename)
         
