@@ -131,8 +131,10 @@ class Query():
         cur = self.conn.cursor()
         cur.execute(sql, (guild_id, user_id,))
         result = cur.fetchone()
+        if result:
+            return { 'id': result[0], 'name': result[1], 'balance': result[2], 'items': result[3] }
         
-        return { 'id': result[0], 'name': result[1], 'balance': result[2], 'items': result[3] }
+        return None
     
     def get_balance(self, guild_id, user_id):
         sql = """
@@ -155,13 +157,18 @@ class Query():
             List[Inventory]: The top balances
         """
         sql = """
-        SELECT * FROM Guild%s
+        SELECT MemberName, Balance FROM Guild%s
         ORDER BY Balance DESC
         FETCH FIRST %s ROWS ONLY 
         """
         cur = self.conn.cursor()
         cur.execute(sql, (guild_id, count,))
+        
+        result = cur.fetchall()
+        result = [{ 'name': balance[0], 'balance': balance[1] } for balance in result]
         cur.close()
+
+        return result
     
     def update_user(self, guild_id: int, inventory: Inventory):
         """Update a user within the database
