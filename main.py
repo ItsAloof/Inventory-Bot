@@ -72,7 +72,7 @@ class InventoryBot(commands.Bot):
         guild = self._get_guild_inventories(guild_id)
         return guild.currency
     
-    def _get_guild_inventories(self, guild_id: int) -> GuildInventory | None:
+    def _get_guild_inventories(self, guild_id: int) -> GuildInventory:
         """
         Gets the guild inventories
 
@@ -83,7 +83,7 @@ class InventoryBot(commands.Bot):
         
         Returns
         -------
-        `GuildInventory` | `None`
+        `GuildInventory`
             The guild inventory or None if it doesn't exist
         """
         guild = self._guildInventories.get(guild_id)

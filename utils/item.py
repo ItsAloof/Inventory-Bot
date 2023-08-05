@@ -1,11 +1,10 @@
 import json
 
 class Item():
-    def __init__(self, name: str, description: str, value: int, currency: str) -> None:
+    def __init__(self, name: str, description: str, value: int) -> None:
         self._name = name
         self._description = description
         self._value = value
-        self._currency = currency
 
     @property
     def name(self) -> str:
@@ -34,15 +33,6 @@ class Item():
     def value(self, value: int) -> None:
         self._value = value
 
-    @property
-    def currency(self) -> str:
-        """The items currency"""
-        return self._currency
-    
-    @currency.setter
-    def currency(self, value: str) -> None:
-        self._currency = value
-
     @staticmethod
     def load(data: dict) -> 'Item':
         return Item(data["name"], data["description"], data["value"], data["currency"])
@@ -55,7 +45,6 @@ class Item():
             "name": self._name,
             "description": self._description,
             "value": self._value,
-            "currency": self._currency
         }
 
     def __repr__(self):

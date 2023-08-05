@@ -59,7 +59,8 @@ class Query():
             MaxInventory integer
         );
         
-        insert into Guilds(GuildID, GuildName, Currency, MaxInventory) values (%(guild_id)s, %(guild_name)s, %(currency)s, %(max_inventory)s);
+        insert into Guilds(GuildID, GuildName, Currency, MaxInventory) 
+        values (%(guild_id)s, %(guild_name)s, %(currency)s, %(max_inventory)s, %(itemshop)s);
         
         create table if not exists Guild%(guild_id)s(
             MemberID bigint PRIMARY KEY,
@@ -70,7 +71,7 @@ class Query():
         """
         cur = self.conn.cursor()
         
-        cur.execute(sql, {'guild_id': guild.guildId, 'guild_name': guild.guildName, 'currency': guild.currency, 'max_inventory': guild.inventory_limit})
+        cur.execute(sql, guild.save())
         
         self.conn.commit()
         cur.close()
@@ -86,7 +87,8 @@ class Query():
             GuildID bigint PRIMARY KEY,
             GuildName varchar(255),
             Currency varchar(10),
-            MaxInventory integer
+            MaxInventory integer,
+            itemshop json
         );
         
         SELECT * FROM Guilds WHERE GuildID = %s;
@@ -191,5 +193,19 @@ class Query():
         self.conn.commit()
         cur.close()
         
-    def update_guild(self, guild_id: int, data: Dict[str, any]):
-        pass
+    def update_guild(self, guild_id: int, guild: GuildInventory):
+        
+        sql = """
+        UPDATE guilds
+        SET GuildName = %(guild_name)s,
+            Currency = %(currency)s,
+            MaxInventory = %(max_inventory)s,
+            itemshop = %(itemshop)s
+        WHERE guildid = %(guild_id)s
+        """
+        cur = self.conn.cursor()
+        
+        cur.execute(sql, guild.save())
+        self.conn.commit()
+        
+        cur.close()

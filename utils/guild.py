@@ -9,6 +9,7 @@ class GuildInventory():
         self._guildId = guildId
         self._guildName = guildName
         self._inventories: list[Inventory] = inventories if inventories else []
+        self._itemshop: list[Item] = []
         self._currency = currency
     
     @property
@@ -22,6 +23,10 @@ class GuildInventory():
     @property
     def inventories(self) -> list:
         return self._inventories
+    
+    @property
+    def itemShop(self) -> list[Item]:
+        return self._itemshop
     
     @property
     def inventory_limit(self) -> int:
@@ -50,11 +55,12 @@ class GuildInventory():
 
     def save(self) -> dict:
         return {
-            "guildId": self.guildId,
-            "guildName": self.guildName,
+            "guild_id": self.guildId,
+            "guild_name": self.guildName,
             "currency": self.currency,
             "inventories": [inventory.save() for inventory in self._inventories] if self._inventories else [],
-            "inventory_limit": self.inventory_limit
+            "inventory_limit": self.inventory_limit,
+            "itemshop": [item.save() for item in self.itemShop]
         }
     
     def toJSON(self) -> str:
