@@ -3,16 +3,16 @@ from utils.item import Item
 
 class Inventory():
     def __init__(self, owner: int, name: str, limit: int = None, items: list[Item] = None, starting_balance: int = 0) -> None:
-        self._owner: int = owner
+        self._id: int = owner
         self._name: str = name
         self._items: list[Item] = items if items else []
         self._limit = limit
         self._balance = starting_balance
     
     @property
-    def owner(self) -> int:
+    def id(self) -> int:
         """The owner of the inventory"""
-        return self._owner
+        return self._id
     @property
     def items(self) -> list[Item]:
         return self._items
@@ -44,7 +44,23 @@ class Inventory():
     
     def format_balance(self, currency: str) -> str:
         """Returns a formatted string of a users balance"""
-        return f"{currency}" + "{:,}".format(self.balance)
+        return f"{currency}" + "{:,.2f}".format(self.balance)
+    
+    
+    @staticmethod
+    def format_money(currency: str, balance: float) -> str:
+        """Returns a formatted balance
+
+        Args:
+            currency (str): The currency symbol to use
+            balance (float): The balance of the user
+
+        Returns:
+            str: The formatted balance
+        """
+
+        return f"{currency}" + "{:,.2f}".format(balance)
+        
     
     @property
     def find_item(self, name: str) -> Item | None:
@@ -73,16 +89,15 @@ class Inventory():
     @staticmethod
     def load(data: dict) -> 'Inventory':
         """Loads an inventory from json data"""
-        return Inventory(owner=data["owner"], name=data["name"], limit=data["limit"], items=[Item.load(item) for item in data["items"]], starting_balance=data["balance"])
+        return Inventory(owner=data["id"], name=data["name"], limit=data["limit"], items=[Item.load(item) for item in data["items"]], starting_balance=data["balance"])
         
     def save(self) -> dict:
         """Saves the inventory to json data"""
         return {
-            "owner": self._owner,
-            "items": [item.save() for item in self._items],
-            "limit": self._limit,
-            "name": self._name,
-            "balance": self._balance
+            "MemberID": self.id,
+            "Items": [item.save() for item in self._items],
+            "MemberName": self._name,
+            "Balance": self._balance
         }
     
     def can_add_item(self) -> bool:
@@ -105,6 +120,7 @@ class Inventory():
             return item
         else:
             return None
+        
     def clear(self) -> None:
         self._items.clear()
     

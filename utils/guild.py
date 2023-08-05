@@ -1,12 +1,14 @@
 from discord import User
 from utils.inventory import Inventory
 from utils.item import Item
+import json
+
 class GuildInventory():
-    def __init__(self, guildId: int, guildName: str, inventory_size: int = None, items: list[Item] = None, currency: str = "$") -> None:
+    def __init__(self, guildId: int, guildName: str, inventory_size: int = None, inventories: list[Inventory] = None, currency: str = "$") -> None:
         self._inventory_limit = inventory_size
         self._guildId = guildId
         self._guildName = guildName
-        self._inventories: list[Inventory] = items if items else []
+        self._inventories: list[Inventory] = inventories if inventories else []
         self._currency = currency
     
     @property
@@ -41,7 +43,10 @@ class GuildInventory():
 
     @staticmethod
     def load(data: dict) -> 'GuildInventory':
-        return GuildInventory(data["guildId"], data["guildName"], data["inventory_limit"], [Inventory.load(inventory) for inventory in data["inventories"]], data["currency"])
+        inventories = None
+        if data.get('inventories'):
+            inventories = [Inventory.load(inventory) for inventory in data["inventories"]]
+        return GuildInventory(data["guildId"], data["guildName"], data["inventory_limit"], inventories, data["currency"])
 
     def save(self) -> dict:
         return {
@@ -50,15 +55,17 @@ class GuildInventory():
             "currency": self.currency,
             "inventories": [inventory.save() for inventory in self._inventories] if self._inventories else [],
             "inventory_limit": self.inventory_limit
-        }      
+        }
+    
+    def toJSON(self) -> str:
+        return json.dumps(self.save())
 
     def get_inventory(self, user: User) -> Inventory:
         for inventory in self._inventories:
-            if inventory.owner == user.id:
+            if inventory.id == user.id:
                 return inventory
         print(f"Could not find inventory for {user.name} ({user.id})")
-        inventory = self.create_inventory(owner=user)
-        return inventory
+        return None
     
     def get_baltop(self) -> list:
         return sorted(self._inventories, key=lambda x: x.balance, reverse=True)[:10]

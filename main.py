@@ -1,18 +1,28 @@
 import json
 import os
 import sys
-from discord import ApplicationError, Guild, Interaction
+from discord import ApplicationError, Guild, Interaction, User
 from nextcord.ext import commands
 import nextcord
 from configparser import ConfigParser
+from utils.pgsql import Query
 
 from utils.guild import GuildInventory
+from utils.inventory import Inventory
 
 class InventoryBot(commands.Bot):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.load_cogs()
-        self._guildInventories: dict[int, GuildInventory] = self.load_inventories()
+        self.pgsql = Query()
+        # Structure:
+        # {
+        #   guild_id: {
+        #       inventories: [GuildInventory]
+        #       last_used: DateTime
+        #   }
+        #}
+        self._guildInventories = {}
 
     def load_cogs(self):
         """
@@ -22,8 +32,46 @@ class InventoryBot(commands.Bot):
             for file in files:
                 if file.endswith(".py"):
                     self.load_extension(f"Cogs.{file[:-3]}")
+                    
+    def get_user_inventory(self, guild_id: int, user: User) -> Inventory:
+        """Retrieve a guild members inventory.
+
+        Args:
+            guild_id (int): The guilds unique id given by Discord
+            member_id (int): The guild members unique id given by Discord
+
+        Returns:
+            Inventory: The users inventory for the guild
+        """
+        guild_inventory = self._get_guild_inventories(guild_id)
+        
+        inventory = guild_inventory.get_inventory(user)
+        if inventory:
+            return inventory
+        data = self.pgsql.get_user(guild_id, user.id)
+        if data is None:
+            inventory = guild_inventory.create_inventory(user)
+            self.pgsql.add_user(guild_id, inventory)
+
+        if 'limit' not in data:
+            data['limit'] = guild_inventory.inventory_limit
+        inventory = Inventory.load(data)
+        guild_inventory.inventories.append(inventory)
+        return inventory
     
-    def get_guild_inventories(self, guild: int) -> GuildInventory | None:
+    def get_currency(self, guild_id: int) -> str:
+        """Returns the currency used by the guild
+
+        Args:
+            guild_id (int): The unique id of the guild the user is in
+
+        Returns:
+            str: The currency symbol
+        """
+        guild = self._get_guild_inventories(guild_id)
+        return guild.currency
+    
+    def _get_guild_inventories(self, guild_id: int) -> GuildInventory | None:
         """
         Gets the guild inventories
 
@@ -37,40 +85,58 @@ class InventoryBot(commands.Bot):
         `GuildInventory` | `None`
             The guild inventory or None if it doesn't exist
         """
-        if guild in self._guildInventories:
-            return self._guildInventories[guild]
-        return None
+        guild = self._guildInventories.get(guild_id)
+        if guild is not None:
+            return guild
+        
+        guild = self.pgsql.get_guild(guild_id)
 
-    def save_inventories(self):
-        data = [self._guildInventories[guildInv].save() for guildInv in self._guildInventories]
-        with open("./resources/inventories.json", "w") as f:
-            json.dump(data, f, indent=4)
+        if guild is None:
+            guild = self._create_guild_inventory(self.get_guild(guild_id))
+        else:
+            guild = GuildInventory.load(guild)
+        
+        self._guildInventories[guild_id] = guild
+        
+        return guild
+        
+
+    def _create_guild_inventory(self, guild: Guild) -> GuildInventory:
+        """Creates a new GuildInventory for Guild
+
+        Args:
+            guild (Guild): The guild to instantiate
+
+        Returns:
+            GuildInventory: The newly created guild
+        """
+        guild_inventory = GuildInventory(guildId=guild.id, guildName=guild.name)
+
+        self.pgsql.add_guild(guild_inventory)
+        
+        return guild_inventory
+    
+    def _create_user_inventory(self, guild: GuildInventory, user: User) -> Inventory:
+        """Creates a new user inventory for the guild
+
+        Args:
+            guild (GuildInventory): The guild the user is in
+            user (User): The user to create the inventory for
+
+        Returns:
+            Inventory: The newly created inventory
+        """
+        inventory = Inventory(user.id, user.name, guild.inventory_limit)
+        self.pgsql.add_user(guild_id=guild.guildId,)
 
     @property
-    def guildInventories(self) -> list[GuildInventory]:
+    def guildInventories(self) -> dict[int, GuildInventory]:
         return self._guildInventories
     
     @guildInventories.setter
-    def inventories(self, value: list[GuildInventory]) -> None:
+    def inventories(self, value: dict[int, GuildInventory]) -> None:
         self._guildInventories = value
 
-
-    def remove_guild(self, guild: int):
-        pass
-
-
-    async def on_ready(self):
-        for guild in self.guilds:
-            if guild.id not in self._guildInventories:
-                self.add_guild(guild)
-    
-    def load_inventories(self) -> dict:
-        with open("./resources/inventories.json", "r") as f:
-            data = json.load(f)
-        return {int(guild["guildId"]): GuildInventory.load(guild) for guild in data}
-
-    def add_guild(self, guild: Guild):
-        self._guildInventories[guild.id] = GuildInventory(guildId=guild.id, guildName=guild.name)
 
 def _load_config(filename="config.ini", section="discord"):
     parser = ConfigParser()

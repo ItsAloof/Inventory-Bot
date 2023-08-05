@@ -2,6 +2,8 @@ from psycopg2.extensions import connection, cursor
 import psycopg2
 from configparser import ConfigParser
 from typing import List, Dict
+from utils.inventory import Inventory
+from utils.guild import GuildInventory
 
 class Query():
     def __init__(self) -> None:
@@ -41,67 +43,100 @@ class Query():
         if conn is not None:
             self.conn = conn
     
-    def add_guild(self, guild_id, guild_name):
-        """Adds guild to main guild table along with creating a independent guild table
+    def add_guild(self, guild: GuildInventory):
+        """Add a guild to Guilds table
 
         Args:
-            guild_id (int): the guilds id given by discord
+            guild_id (int): The id of the guild given by discord
             guild_name (str): The name of the guild
-        """
-        
+            inventories (str): The inventories of the users within the guild
+        """        
         sql = """
         create table if not exists Guilds(
-            GuildID varchar(50),
-            GuildName varchar(255)
+            GuildID bigint PRIMARY KEY,
+            GuildName varchar(255),
+            Currency varchar(10),
+            MaxInventory integer
         );
-        insert into Guilds(GuildID, GuildName) values (%s, %s);
         
-        create table if not exists Guild%s(MemberID varchar(100), GuildMember json, Balance numeric(65, 2), Items json);
+        insert into Guilds(GuildID, GuildName, Currency, MaxInventory) values (%(guild_id)s, %(guild_name)s, %(currency)s, %(max_inventory)s);
         
+        create table if not exists Guild%(guild_id)s(
+            MemberID bigint PRIMARY KEY,
+            MemberName varchar(255),
+            Balance decimal(65, 2),
+            Inventory json
+        );
         """
         cur = self.conn.cursor()
         
-        cur.execute(sql, (guild_id, guild_name, guild_id,))
+        cur.execute(sql, {'guild_id': guild.guildId, 'guild_name': guild.guildName, 'currency': guild.currency, 'max_inventory': guild.inventory_limit})
         
         self.conn.commit()
         cur.close()
+    
+    def get_guild(self, guild_id: int):
+        """Retrieve a guilds user inventories from the database
+
+        Args:
+            guild_id (int): The id of the guild given by Discord
+        """
+        sql = """
+        CREATE TABLE IF NOT EXISTS Guilds(
+            GuildID bigint PRIMARY KEY,
+            GuildName varchar(255),
+            Currency varchar(10),
+            MaxInventory integer
+        );
         
-    def add_user(self, guild_id, user_id, user, balance, items):
+        SELECT * FROM Guilds WHERE GuildID = %s;
+        """
+        cur = self.conn.cursor()
+        
+        cur.execute(sql, (guild_id,))
+        
+        result = cur.fetchone()
+        cur.close()
+        
+        return { 'guildId': result[0], 'guildName': result[1], 'currency': result[2], 'inventory_limit': result[3] }
+        
+    def add_user(self, guild_id: int, inventory: Inventory):
         """Add user to guild database
 
         Args:
-            guild_id (str): The guild to add the user to
-            user (DiscordUser): The user to add
-            balance (decimal): The users balance for the guild
+            guild_id (int): The guild to add the user to
+            user_id (int): The unique id for the user being added
+            balance (float): The users balance for the guild
             items (Dict): The users items within the guild
         """
         
         sql = """
-        insert into Guild%s(MemberID, GuildMember, Balance, Items) values(%s, %s, %s, %s) returning GuildMember;
+        insert into Guild%(guild_id)s(MemberID, MemberName, Balance, Inventory) 
+        values(%(MemberID)s, %(MemberName)s, %(Balance)s, %(Items)s);
         """
         cur = self.conn.cursor()
         
-        cur.execute(sql, (guild_id, user_id, user, balance, items,))
+        cur.execute(sql, {"guild_id": guild_id, **inventory.save()})
         
         self.conn.commit()
         cur.close()
         
     def get_user(self, guild_id: str, user_id: str):
         sql = """
-        select MemberID, GuildMember, Balance, Items 
+        select MemberID, MemberName, Balance, Inventory 
         from Guild%s 
-        where MemberID = cast(%s as varchar(100));
+        where MemberID = %s;
         """
         
         cur = self.conn.cursor()
         cur.execute(sql, (guild_id, user_id,))
         result = cur.fetchone()
-        print(result)
-        return result
+        
+        return { 'id': result[0], 'name': result[1], 'balance': result[2], 'items': result[3] }
     
     def get_balance(self, guild_id, user_id):
         sql = """
-        select Balance from Guild%s where MemberID = cast(%s as varchar(100));
+        select Balance from Guild%s where MemberID = %s;
         """
         cur = self.conn.cursor()
         cur.execute(sql, (guild_id, user_id,))
@@ -109,21 +144,45 @@ class Query():
         print(result)
         return result
     
-    def update_user(self, guild_id, user_id, userdata: Dict[List[Dict]]):
+    def get_top_balances(self, guild_id: int, count: int) -> List[Inventory]:
+        """Get the top n balances within the guild
+
+        Args:
+            guild_id (int): The guild to get the top balances in
+            count (int): The amount of balances to retrieve
+
+        Returns:
+            List[Inventory]: The top balances
+        """
+        sql = """
+        SELECT * FROM Guild%s
+        ORDER BY Balance DESC
+        FETCH FIRST %s ROWS ONLY 
+        """
+        cur = self.conn.cursor()
+        cur.execute(sql, (guild_id, count,))
+        cur.close()
+    
+    def update_user(self, guild_id: int, inventory: Inventory):
         """Update a user within the database
 
         Args:
-            guild_id (:class:`str`): The id for the guild the user is in
-            user_id (:class:`str`): The unique id for the user within discord
-            userdata (:class:`Dict`): the data to be updated
+            guild_id (`str`): The id for the guild the user is in
+            user_id (`str`): The unique id for the user within discord
+            userdata (`Dict`): the data to be updated
         """
         
         sql = """
-        UPDATE Guild%s
-        SET Balance = %s,
-            Items = %s
-        WHERE MemberID = %s
+        UPDATE Guild%(guild_id)s
+        SET Balance = %(Balance)s,
+            Inventory = %(Items)s
+        WHERE MemberID = %(MemberID)s
         """
         cur = self.conn.cursor()
         
-        cur.execute(sql, (guild_id, userdata['balance'], userdata['items'],))
+        cur.execute(sql, {"guild_id": guild_id, **inventory.save()})
+        self.conn.commit()
+        cur.close()
+        
+    def update_guild(self, guild_id: int, data: Dict[str, any]):
+        pass
