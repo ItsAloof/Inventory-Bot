@@ -43,7 +43,7 @@ class InventoryBot(commands.Bot):
         Returns:
             Inventory: The users inventory for the guild
         """
-        guild_inventory = self._get_guild_inventories(guild_id)
+        guild_inventory = self._get_guild_inventory(guild_id)
         
         inventory = guild_inventory.get_inventory(user)
         if inventory:
@@ -69,10 +69,10 @@ class InventoryBot(commands.Bot):
         Returns:
             str: The currency symbol
         """
-        guild = self._get_guild_inventories(guild_id)
+        guild = self._get_guild_inventory(guild_id)
         return guild.currency
     
-    def _get_guild_inventories(self, guild_id: int) -> GuildInventory:
+    def _get_guild_inventory(self, guild_id: int) -> GuildInventory:
         """
         Gets the guild inventories
 

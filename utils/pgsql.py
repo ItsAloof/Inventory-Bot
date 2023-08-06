@@ -99,8 +99,24 @@ class Query():
         
         result = cur.fetchone()
         cur.close()
+        return { 'guildId': result[0], 'guildName': result[1], 'currency': result[2], 'inventory_limit': result[3], 'itemshop': result[4] }
         
-        return { 'guildId': result[0], 'guildName': result[1], 'currency': result[2], 'inventory_limit': result[3] }
+    def update_guild(self, guild_id: int, guild: GuildInventory):
+        
+        sql = """
+        UPDATE guilds
+        SET GuildName = %(guild_name)s,
+            Currency = %(currency)s,
+            MaxInventory = %(inventory_limit)s,
+            itemshop = %(itemshop)s
+        WHERE guildid = %(guild_id)s
+        """
+        cur = self.conn.cursor()
+        
+        cur.execute(sql, guild.save())
+        self.conn.commit()
+        
+        cur.close()
         
     def add_user(self, guild_id: int, inventory: Inventory):
         """Add user to guild database
@@ -193,19 +209,3 @@ class Query():
         self.conn.commit()
         cur.close()
         
-    def update_guild(self, guild_id: int, guild: GuildInventory):
-        
-        sql = """
-        UPDATE guilds
-        SET GuildName = %(guild_name)s,
-            Currency = %(currency)s,
-            MaxInventory = %(max_inventory)s,
-            itemshop = %(itemshop)s
-        WHERE guildid = %(guild_id)s
-        """
-        cur = self.conn.cursor()
-        
-        cur.execute(sql, guild.save())
-        self.conn.commit()
-        
-        cur.close()

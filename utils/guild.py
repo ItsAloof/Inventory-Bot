@@ -4,12 +4,12 @@ from utils.item import Item
 import json
 
 class GuildInventory():
-    def __init__(self, guildId: int, guildName: str, inventory_size: int = None, inventories: list[Inventory] = None, currency: str = "$") -> None:
+    def __init__(self, guildId: int, guildName: str, inventory_size: int = None, inventories: list[Inventory] = None, currency: str = "$", itemshop: list[Item] = None) -> None:
         self._inventory_limit = inventory_size
         self._guildId = guildId
         self._guildName = guildName
         self._inventories: list[Inventory] = inventories if inventories else []
-        self._itemshop: list[Item] = []
+        self._itemshop: list[Item] = itemshop if itemshop is not None else []
         self._currency = currency
     
     @property
@@ -48,19 +48,24 @@ class GuildInventory():
 
     @staticmethod
     def load(data: dict) -> 'GuildInventory':
-        inventories = None
+        inventories, itemshop = None, None
         if data.get('inventories'):
             inventories = [Inventory.load(inventory) for inventory in data["inventories"]]
-        return GuildInventory(data["guildId"], data["guildName"], data["inventory_limit"], inventories, data["currency"])
+        if data.get('itemshop') is not None:
+            itemshop = [Item(**item) for item in data.get('itemshop')]
+        return GuildInventory(data["guildId"], data["guildName"], data["inventory_limit"], inventories, data["currency"], itemshop)
 
+    def add_items(self, items: dict):
+        item_list = [Item(**item) for item in items]
+        self.itemShop.extend(item_list)
+    
     def save(self) -> dict:
         return {
             "guild_id": self.guildId,
             "guild_name": self.guildName,
             "currency": self.currency,
-            "inventories": [inventory.save() for inventory in self._inventories] if self._inventories else [],
             "inventory_limit": self.inventory_limit,
-            "itemshop": [item.save() for item in self.itemShop]
+            "itemshop": json.dumps([item.save() for item in self.itemShop])
         }
     
     def toJSON(self) -> str:
