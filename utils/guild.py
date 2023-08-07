@@ -58,6 +58,20 @@ class GuildInventory():
     def add_items(self, items: dict):
         item_list = [Item(**item) for item in items]
         self.itemShop.extend(item_list)
+        
+    def get_item(self, id: str) -> Item | None:
+        """Get an item within the guilds itemshop
+
+        Args:
+            id (str): The id of the item
+
+        Returns:
+            Item | None: The item being checked for if exists else None
+        """
+        for item in self.itemShop:
+            if item.id == id:
+                return item
+        return None
     
     def save(self) -> dict:
         return {

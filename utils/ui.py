@@ -6,7 +6,7 @@ from nextcord.colour import Colour
 from nextcord.components import SelectOption
 from nextcord.interactions import Interaction
 from nextcord.types.embed import EmbedType
-from nextcord.utils import MISSING
+from utils.guild import GuildInventory
 from utils.item import Item
 
 class EmbedCreator():
@@ -35,25 +35,37 @@ class EmbedCreator():
         Returns:
             Embed: The emed for the item
         """
-        embed = Embed(title=item.name, color=Colour.blue)
+        embed = Embed(title=item.name, color=Colour.blue())
         embed.description = item.description
-        embed.add_field(name='Value:', value=f'{item.value:,.2f}')
+        embed.add_field(name='Value:', value=f'{currency}{item.value:,.2f}')
         return embed
     
+    
 class ItemSelector(nextcord.ui.StringSelect):
-    def __init__(self, *, view: 'ItemShopView', custom_id: str = ..., placeholder: str | None = None, min_values: int = 1, max_values: int = 1, options: List[SelectOption] = ..., disabled: bool = False, row: int | None = None, items: list[Item]) -> None:
+    def __init__(self, *, custom_id: str = "inventory-bot-itemselector", placeholder: str = "Select an item from the menu", min_values: int = 1, max_values: int = 1, options: List[SelectOption] = None, disabled: bool = False, row: int | None = None, guild: GuildInventory) -> None:
+        if options is None:
+            options = []
         super().__init__(custom_id=custom_id, placeholder=placeholder, min_values=min_values, max_values=max_values, options=options, disabled=disabled, row=row)
-        self.view = view
-        for item in items:
+        self.guild = guild
+        for item in guild.itemShop:
             self.add_option(label=item.name, value=str(item.id), description=item.description)
         
     async def callback(self, interaction: Interaction) -> None:
-        assert self.view is not None and isinstance(self.view, ItemShopView)
         
+        assert self.view is not None
+        selected = self.values[0]
+        await interaction.response.edit_message(embed=EmbedCreator.item_embed(currency=self.guild.currency, item=self.guild.get_item(selected)))
         
-class ItemShopView(nextcord.ui.View):
-    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, items: list[Item]) -> None:
+class EditorView(nextcord.ui.View):
+    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory) -> None:
         super().__init__(timeout=timeout, auto_defer=auto_defer)
-        self.add_item(ItemSelector(custom_id="itemshop-view", placeholder="Select an item from the menu", min_values=1, max_values=1, items=items))
+        self.guild = guild
+        self.add_item(ItemSelector(custom_id=f"editor-view-{guild.guildId}", row=1, guild=guild))
+        
+
+class ItemShopView(nextcord.ui.View):
+    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory) -> None:
+        super().__init__(timeout=timeout, auto_defer=auto_defer)
+        self.add_item(ItemSelector(custom_id=f"itemshop-view-{guild.guildId}", min_values=1, max_values=1, guild=guild))
         
         

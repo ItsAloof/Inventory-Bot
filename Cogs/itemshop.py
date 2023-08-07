@@ -3,6 +3,7 @@ from nextcord.application_command import slash_command
 from nextcord import Interaction, SlashOption
 from main import InventoryBot
 from utils.item import Item
+from utils.ui import EditorView
 
 
 class ItemShop(commands.Cog):
@@ -23,6 +24,11 @@ class ItemShop(commands.Cog):
     @slash_command(name='shopeditor', description="Allows admins to edit the itemshop", guild_ids=[1001667368801550439])
     async def shopeditor(self, interaction: Interaction):
         pass
+    
+    @shopeditor.subcommand(name="editor", description="Edit the itemshop within Discord")
+    async def editor(self, interaction: Interaction):
+        guild = self.bot._get_guild_inventory(interaction.guild_id)
+        await interaction.send(view=EditorView(guild=guild))
     
     @shopeditor.subcommand(name='add', description='Add an item to the itemshop')
     async def add(self, interaction: Interaction, name: str = SlashOption(name="name", description="The name of the item", required=True),
