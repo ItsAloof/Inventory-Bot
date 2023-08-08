@@ -101,7 +101,7 @@ class Query():
         cur.close()
         return { 'guildId': result[0], 'guildName': result[1], 'currency': result[2], 'inventory_limit': result[3], 'itemshop': result[4] }
         
-    def update_guild(self, guild_id: int, guild: GuildInventory):
+    def update_guild(self, guild: GuildInventory):
         
         sql = """
         UPDATE guilds

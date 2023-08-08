@@ -11,6 +11,7 @@ from nextcord.partial_emoji import PartialEmoji
 from nextcord.types.embed import EmbedType
 from utils.guild import GuildInventory
 from utils.item import Item
+from utils.pgsql import Query
 
 class EmbedCreator():
     
@@ -50,8 +51,9 @@ class ItemSelector(nextcord.ui.StringSelect):
             options = []
         super().__init__(custom_id=custom_id, placeholder=placeholder, min_values=min_values, max_values=max_values, options=options, disabled=disabled, row=row)
         self.guild = guild
-        for item in guild.itemShop:
-            self.add_option(label=item.name, value=str(item.id), description=item.description)
+        for item in self.guild.itemShop:
+            description = item.description if len(item.description) <= 100 else item.description[:97] + '...'
+            self.add_option(label=item.name, value=str(item.id), description=description)
         
     def add_editor_buttons(self):
         self.view: EditorView
@@ -70,20 +72,25 @@ class ItemSelector(nextcord.ui.StringSelect):
         else:
             self.add_itemshop_buttons()
         selected = self.values[0]
-        
-        await interaction.response.edit_message(embed=EmbedCreator.item_embed(currency=self.guild.currency, item=self.guild.get_item(selected)), view=self.view)
+        self.view._selected_item = self.guild.get_item(selected)
+        await interaction.response.edit_message(embed=EmbedCreator.item_embed(currency=self.guild.currency, item=self.view._selected_item), view=self.view)
         
 class EditorView(nextcord.ui.View):
-    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory) -> None:
+    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory, sql: Query) -> None:
         super().__init__(timeout=timeout, auto_defer=auto_defer)
         self.guild = guild
-        self.add_item(ItemSelector(custom_id=f"editor-view-{guild.guildId}", guild=guild))
+        if len(guild.itemShop) > 0:
+            self.add_item(ItemSelector(guild=guild, custom_id=f"editor-view-{guild.guildId}"))
         
+        self.sql = sql
+        self._selected_item = None
 
 class ItemShopView(nextcord.ui.View):
-    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory) -> None:
+    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory, sql: Query) -> None:
         super().__init__(timeout=timeout, auto_defer=auto_defer)
         self.add_item(ItemSelector(custom_id=f"itemshop-view-{guild.guildId}", min_values=1, max_values=1, guild=guild))
+        self.sql = sql
+        self.guild = guild
         
 class EditButton(nextcord.ui.Button):
     def __init__(self, *, style: ButtonStyle = ButtonStyle.primary, label: str | None = "Edit", disabled: bool = False, custom_id: str | None = None, url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1) -> None:
@@ -97,7 +104,16 @@ class DeleteButton(nextcord.ui.Button):
         super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
     
     async def callback(self, interaction: Interaction) -> None:
-        await interaction.send(content="Not implemented yet")
+        self.view: EditorView
+        if self.view._selected_item is None:
+            await interaction.send(content="This item no longer exists!")
+            return
+        item = self.view._selected_item
+        self.view._selected_item = None
+        self.view.guild.remove_item(item)
+        self.view.sql.update_guild(guild=self.view.guild)
+        
+        await interaction.send(content="Successfully Deleted Item:", embed=EmbedCreator.item_embed(item, self.view.guild.currency))
         
 class BuyButton(nextcord.ui.Button):
     def __init__(self, *, style: ButtonStyle = ButtonStyle.green, label: str | None = "Buy", disabled: bool = False, custom_id: str | None = None, url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1) -> None:
