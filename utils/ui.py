@@ -4,7 +4,10 @@ import nextcord
 from nextcord import Embed
 from nextcord.colour import Colour
 from nextcord.components import SelectOption
+from nextcord.emoji import Emoji
+from nextcord.enums import ButtonStyle
 from nextcord.interactions import Interaction
+from nextcord.partial_emoji import PartialEmoji
 from nextcord.types.embed import EmbedType
 from utils.guild import GuildInventory
 from utils.item import Item
@@ -42,7 +45,7 @@ class EmbedCreator():
     
     
 class ItemSelector(nextcord.ui.StringSelect):
-    def __init__(self, *, custom_id: str = "inventory-bot-itemselector", placeholder: str = "Select an item from the menu", min_values: int = 1, max_values: int = 1, options: List[SelectOption] = None, disabled: bool = False, row: int | None = None, guild: GuildInventory) -> None:
+    def __init__(self, *, custom_id: str = "inventory-bot-itemselector", placeholder: str = "Select an item from the menu", min_values: int = 1, max_values: int = 1, options: List[SelectOption] = None, disabled: bool = False, row: int | None = 2, guild: GuildInventory) -> None:
         if options is None:
             options = []
         super().__init__(custom_id=custom_id, placeholder=placeholder, min_values=min_values, max_values=max_values, options=options, disabled=disabled, row=row)
@@ -50,17 +53,31 @@ class ItemSelector(nextcord.ui.StringSelect):
         for item in guild.itemShop:
             self.add_option(label=item.name, value=str(item.id), description=item.description)
         
+    def add_editor_buttons(self):
+        self.view: EditorView
+        self.view.add_item(EditButton())
+        self.view.add_item(DeleteButton())
+        
+    def add_itemshop_buttons(self):
+        self.view: ItemShopView
+        self.view.add_item(BuyButton())
+        
     async def callback(self, interaction: Interaction) -> None:
         
         assert self.view is not None
+        if isinstance(self.view, EditorView):
+            self.add_editor_buttons()
+        else:
+            self.add_itemshop_buttons()
         selected = self.values[0]
-        await interaction.response.edit_message(embed=EmbedCreator.item_embed(currency=self.guild.currency, item=self.guild.get_item(selected)))
+        
+        await interaction.response.edit_message(embed=EmbedCreator.item_embed(currency=self.guild.currency, item=self.guild.get_item(selected)), view=self.view)
         
 class EditorView(nextcord.ui.View):
     def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory) -> None:
         super().__init__(timeout=timeout, auto_defer=auto_defer)
         self.guild = guild
-        self.add_item(ItemSelector(custom_id=f"editor-view-{guild.guildId}", row=1, guild=guild))
+        self.add_item(ItemSelector(custom_id=f"editor-view-{guild.guildId}", guild=guild))
         
 
 class ItemShopView(nextcord.ui.View):
@@ -68,4 +85,23 @@ class ItemShopView(nextcord.ui.View):
         super().__init__(timeout=timeout, auto_defer=auto_defer)
         self.add_item(ItemSelector(custom_id=f"itemshop-view-{guild.guildId}", min_values=1, max_values=1, guild=guild))
         
+class EditButton(nextcord.ui.Button):
+    def __init__(self, *, style: ButtonStyle = ButtonStyle.primary, label: str | None = "Edit", disabled: bool = False, custom_id: str | None = None, url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1) -> None:
+        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+
+    async def callback(self, interaction: Interaction) -> None:
+        await interaction.send(content="Not implemented yet")
         
+class DeleteButton(nextcord.ui.Button):
+    def __init__(self, *, style: ButtonStyle = ButtonStyle.red, label: str | None = "Delete", disabled: bool = False, custom_id: str | None = None, url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1) -> None:
+        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+    
+    async def callback(self, interaction: Interaction) -> None:
+        await interaction.send(content="Not implemented yet")
+        
+class BuyButton(nextcord.ui.Button):
+    def __init__(self, *, style: ButtonStyle = ButtonStyle.green, label: str | None = "Buy", disabled: bool = False, custom_id: str | None = None, url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1) -> None:
+        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+    
+    async def callback(self, interaction: Interaction) -> None:
+        await interaction.send(content="Not implemented yet")

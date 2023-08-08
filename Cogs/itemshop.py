@@ -3,23 +3,17 @@ from nextcord.application_command import slash_command
 from nextcord import Interaction, SlashOption
 from main import InventoryBot
 from utils.item import Item
-from utils.ui import EditorView
+from utils.ui import EditorView, ItemShopView
 
 
 class ItemShop(commands.Cog):
     def __init__(self, bot: InventoryBot):
         self.bot = bot
         
-    @slash_command(name='shop', description="Commands for the itemshop", guild_ids=[1001667368801550439])
+    @slash_command(name='shop', description="Opens the item shop where you can purchase items", guild_ids=[1001667368801550439])
     async def shop(self, interaction: Interaction):
-        pass
-    
-    @shop.subcommand(name='list', description="List all the items available for purchase")
-    async def list(self, interaction: Interaction):
         guild = self.bot._get_guild_inventory(interaction.guild_id)
-        itemshop = guild.itemShop
-        msg = '\n'.join([f'{i+1}.) {str(itemshop[i])}' for i in range(len(itemshop))])
-        await interaction.response.send_message(msg)
+        await interaction.response.send_message(view=ItemShopView(guild=guild))
     
     @slash_command(name='shopeditor', description="Allows admins to edit the itemshop", guild_ids=[1001667368801550439])
     async def shopeditor(self, interaction: Interaction):
