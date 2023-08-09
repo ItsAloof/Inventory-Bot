@@ -4,12 +4,13 @@ import json
 
 
 class Inventory():
-    def __init__(self, owner: int, name: str, limit: int = None, items: list[Item] = None, starting_balance: int = 0) -> None:
+    def __init__(self, owner: int, name: str, limit: int = None, items: list[Item] = None, starting_balance: int = 0, currency: str = '$') -> None:
         self._id: int = owner
         self._name: str = name
         self._items: list[Item] = items if items else []
         self._limit = limit
         self._balance = starting_balance
+        self._currency = '$'
     
     @property
     def id(self) -> int:
@@ -31,6 +32,14 @@ class Inventory():
     @balance.setter
     def balance(self, value: int) -> None:
         self._balance = value
+        
+    @property
+    def currency(self) -> str:
+        return self._currency
+    
+    @currency.setter
+    def currency(self, value: str) -> None:
+        self._currency = value
 
     def deposit(self, amount: int) -> bool:
         if amount > 0:
@@ -91,7 +100,7 @@ class Inventory():
     @staticmethod
     def load(data: dict, currency: str) -> 'Inventory':
         """Loads an inventory from json data"""
-        return Inventory(owner=data["id"], name=data["name"], limit=data["limit"], items=[Item.load(item, currency) for item in data["items"]], starting_balance=data["balance"])
+        return Inventory(owner=data["id"], name=data["name"], limit=data["limit"], items=[Item.load(item, currency) for item in data["items"]], starting_balance=data["balance"], currency=currency)
         
     def save(self) -> dict:
         """Saves the inventory to json data"""
