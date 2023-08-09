@@ -26,10 +26,20 @@ class GuildInventory():
     
     @property
     def itemShop(self) -> list[Item]:
+        """The items available for purchase within the guild for users
+
+        Returns:
+            list[Item]: The items available for purchase within the guild
+        """
         return self._itemshop
     
     @property
     def inventory_limit(self) -> int:
+        """The limit for items the guild allows a user to possess 
+
+        Returns:
+            int: _description_
+        """
         return self._inventory_limit
     
     @inventory_limit.setter
@@ -40,6 +50,11 @@ class GuildInventory():
     
     @property
     def currency(self) -> str:
+        """The currency used by this guild (defaults to $)
+
+        Returns:
+            str: The currency of the guild
+        """
         return self._currency
 
     @currency.setter
@@ -61,6 +76,21 @@ class GuildInventory():
     
     def remove_item(self, item: Item):
         self.itemShop.remove(item)
+        
+    def can_buy_item(item: Item, user: Inventory) -> bool:
+        """Check for whether the user can afford the item they are trying to purchase
+
+        Args:
+            item (Item): The item being purchased
+            user (Inventory): The user purchasing the item
+
+        Returns:
+            bool: Whether the user can purchase the item or not
+        """
+        if user.balance <= item.value:
+            return True
+        
+        return False
         
     def get_item(self, id: str) -> Item | None:
         """Get an item within the guilds itemshop

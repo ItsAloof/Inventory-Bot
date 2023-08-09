@@ -137,4 +137,4 @@ inventory-bot/Scripts/pip3.11.exe
 inventory-bot/Scripts/pip3.exe
 inventory-bot/Scripts/python.exe
 inventory-bot/Scripts/pythonw.exe
-database.ini
+config.ini
