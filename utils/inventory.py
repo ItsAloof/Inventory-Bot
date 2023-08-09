@@ -1,4 +1,6 @@
 from utils.item import Item
+import decimal
+import json
 
 
 class Inventory():
@@ -36,9 +38,9 @@ class Inventory():
             return True
         return False
     
-    def withdraw(self, amount: int) -> bool:
+    def withdraw(self, amount: float) -> bool:
         if amount > 0 and amount <= self._balance:
-            self._balance -= amount
+            self._balance -= decimal.Decimal(amount)
             return True
         return False
     
@@ -87,15 +89,15 @@ class Inventory():
         self._limit = value
 
     @staticmethod
-    def load(data: dict) -> 'Inventory':
+    def load(data: dict, currency: str) -> 'Inventory':
         """Loads an inventory from json data"""
-        return Inventory(owner=data["id"], name=data["name"], limit=data["limit"], items=[Item.load(item) for item in data["items"]], starting_balance=data["balance"])
+        return Inventory(owner=data["id"], name=data["name"], limit=data["limit"], items=[Item.load(item, currency) for item in data["items"]], starting_balance=data["balance"])
         
     def save(self) -> dict:
         """Saves the inventory to json data"""
         return {
             "MemberID": self.id,
-            "Items": [item.save() for item in self._items],
+            "Items": json.dumps([item.save() for item in self._items]),
             "MemberName": self._name,
             "Balance": self._balance
         }
@@ -108,6 +110,7 @@ class Inventory():
     
     def add_item(self, item: Item) -> bool:
         if self.can_add_item():
+            self.balance -= decimal.Decimal(item.value)
             self._items.append(item)
             return True
         else:

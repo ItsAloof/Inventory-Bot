@@ -46,8 +46,8 @@ class Item():
         self._value = value
 
     @staticmethod
-    def load(data: dict) -> 'Item':
-        return Item(data["name"], data["description"], data["value"], data["currency"], UUID(data["id"]))
+    def load(data: dict, currency: str) -> 'Item':
+        return Item(data["name"], data["description"], data["value"], currency, UUID(data["id"]))
     
     def toJSON(self):
         return json.dumps(self, default= lambda o: o.__dict__, sort_keys=True)

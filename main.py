@@ -48,14 +48,16 @@ class InventoryBot(commands.Bot):
         inventory = guild_inventory.get_inventory(user)
         if inventory:
             return inventory
+        
         data = self.pgsql.get_user(guild_id, user.id)
+        
         if data is None:
             inventory = guild_inventory.create_inventory(user)
             self.pgsql.add_user(guild_id, inventory)
         else:
             if 'limit' not in data:
                 data['limit'] = guild_inventory.inventory_limit
-            inventory = Inventory.load(data)
+            inventory = Inventory.load(data, guild_inventory.currency)
                 
         guild_inventory.inventories.append(inventory)
         return inventory

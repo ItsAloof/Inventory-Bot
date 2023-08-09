@@ -14,7 +14,7 @@ class InventoryCmd(commands.Cog):
         if user:
             await interaction.response.send_message(f"Viewing {user}'s inventory")
         else:
-            inventory = self.bot.get_guild_inventories(interaction.guild_id).get_inventory(interaction.user)
+            inventory = self.bot._get_guild_inventory(interaction.guild_id).get_inventory(interaction.user)
             await interaction.response.send_message(str(inventory), ephemeral=True)
 
     @slash_command(name="additem", description="Add an item to your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
