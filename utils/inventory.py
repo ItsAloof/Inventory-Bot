@@ -10,7 +10,7 @@ class Inventory():
         self._items: list[Item] = items if items else []
         self._limit = limit
         self._balance = starting_balance
-        self._currency = '$'
+        self._currency = currency
     
     @property
     def id(self) -> int:

@@ -60,6 +60,8 @@ class GuildInventory():
     @currency.setter
     def currency(self, value: str) -> None:
         self._currency = value
+        for inventory in self._inventories:
+            inventory.currency = value
 
     @staticmethod
     def load(data: dict) -> 'GuildInventory':
