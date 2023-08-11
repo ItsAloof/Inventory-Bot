@@ -7,7 +7,7 @@ class Item():
         self._name = name
         self._description = description
         self._value = value
-        self._id = id if id is not None else uuid.uuid4()
+        self._id = id if id is not None else str(uuid.uuid4())
         self._currency = currency
         self._amount = amount
 

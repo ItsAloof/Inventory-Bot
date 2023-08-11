@@ -95,11 +95,12 @@ class EditorView(nextcord.ui.View):
         self._selected_item = None
 
 class ItemShopView(nextcord.ui.View):
-    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory, sql: Query) -> None:
+    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory, sql: Query, user: Inventory) -> None:
         super().__init__(timeout=timeout, auto_defer=auto_defer)
         self.add_item(ItemSelector(custom_id=f"itemshop-view-{guild.guildId}", min_values=1, max_values=1, guild=guild))
         self.sql = sql
         self.guild = guild
+        self.user = user
         self._selected_item = None
 
 class EditModal(nextcord.ui.Modal):
@@ -161,20 +162,28 @@ class DeleteButton(nextcord.ui.Button):
         
 class BuyButton(nextcord.ui.Button):
     def __init__(self, *, style: ButtonStyle = ButtonStyle.green, label: str | None = "Buy", disabled: bool = False, custom_id: str | None = None, 
-                 url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1, user: Inventory) -> None:
+                 url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1) -> None:
         super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
-        self.user = user
     
     async def callback(self, interaction: Interaction) -> None:
         if not isinstance(self.view, ItemShopView) and self._selected_item is not None:
             await interaction.send(content="The item is invalid")
             return
+        
         if self.view._selected_item is None:
             await interaction.send(content="This item is no longer available for purchase")
         
-        if not self.view.guild.can_buy_item(self.view._selected_item, self.user):
+        if not isinstance(self.view._selected_item, Item):
+            await interaction.send(content="This item is no longer available for purchase")
+            return
+        
+        if not self.view.guild.can_buy_item(item=self.view._selected_item, user=self.view.user):
             await interaction.send(content="You cannot afford this item!")
+            return
             
         item: Item = self.view._selected_item
-        if self.user.add_item(Item(name=item.name, description=item.description, value=item.value, id=item.id, currency=self.view.guild.currency)):
+        user: Inventory = self.view.user
+        guild: GuildInventory = self.view.guild
+        if self.view.user.add_item(Item(name=item.name, description=item.description, value=item.value, id=item.id, currency=guild.currency)):
+            self.view.sql.update_user(guild_id=guild.guildId, inventory=user)
             await interaction.send(content="Successfully added item:", embed=EmbedCreator.item_embed(item, self.view.guild.currency))

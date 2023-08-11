@@ -12,11 +12,12 @@ class ItemShop(commands.Cog):
         
     @slash_command(name='shop', description="Opens the item shop where you can purchase items", guild_ids=[1001667368801550439])
     async def shop(self, interaction: Interaction):
-        guild = self.bot._get_guild_inventory(interaction.guild_id)
+        guild = self.bot.get_guild_inventory(interaction.guild_id)
+        user = self.bot.get_user_inventory(guild.guildId, interaction.user)
         if len(guild.itemShop) == 0:
             await interaction.send(content="There currently are not any items available in the itemshop")
             return
-        await interaction.response.send_message(view=ItemShopView(guild=guild))
+        await interaction.response.send_message(view=ItemShopView(guild=guild, sql=self.bot.pgsql, user=user))
     
     @slash_command(name='shopeditor', description="Allows admins to edit the itemshop", guild_ids=[1001667368801550439])
     async def shopeditor(self, interaction: Interaction):
@@ -24,7 +25,7 @@ class ItemShop(commands.Cog):
     
     @shopeditor.subcommand(name="editor", description="Edit the itemshop within Discord")
     async def editor(self, interaction: Interaction):
-        guild = self.bot._get_guild_inventory(interaction.guild_id)
+        guild = self.bot.get_guild_inventory(interaction.guild_id)
         if len(guild.itemShop) == 0:
             await interaction.send(content="There currently are not any items available in the itemshop")
             return
@@ -34,7 +35,7 @@ class ItemShop(commands.Cog):
     async def add(self, interaction: Interaction, name: str = SlashOption(name="name", description="The name of the item", required=True),
             value: float = SlashOption(name="value", description="The value of the item", required=True, min_value=0),
             description: str = SlashOption(name="description", description="The item description", required=False)):
-        guild = self.bot._get_guild_inventory(guild_id=interaction.guild_id)
+        guild = self.bot.get_guild_inventory(guild_id=interaction.guild_id)
         
         new_item = Item(name=name, description=description, value=value)
         

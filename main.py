@@ -43,19 +43,21 @@ class InventoryBot(commands.Bot):
         Returns:
             Inventory: The users inventory for the guild
         """
-        guild_inventory = self._get_guild_inventory(guild_id)
+        guild_inventory = self.get_guild_inventory(guild_id)
         
         inventory = guild_inventory.get_inventory(user)
         if inventory:
             return inventory
+        
         data = self.pgsql.get_user(guild_id, user.id)
+        
         if data is None:
             inventory = guild_inventory.create_inventory(user)
             self.pgsql.add_user(guild_id, inventory)
         else:
             if 'limit' not in data:
                 data['limit'] = guild_inventory.inventory_limit
-            inventory = Inventory.load(data)
+            inventory = Inventory.load(data, guild_inventory.currency)
                 
         guild_inventory.inventories.append(inventory)
         return inventory
@@ -69,10 +71,10 @@ class InventoryBot(commands.Bot):
         Returns:
             str: The currency symbol
         """
-        guild = self._get_guild_inventory(guild_id)
+        guild = self.get_guild_inventory(guild_id)
         return guild.currency
     
-    def _get_guild_inventory(self, guild_id: int) -> GuildInventory:
+    def get_guild_inventory(self, guild_id: int) -> GuildInventory:
         """
         Gets the guild inventories
 

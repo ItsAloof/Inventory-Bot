@@ -60,6 +60,8 @@ class GuildInventory():
     @currency.setter
     def currency(self, value: str) -> None:
         self._currency = value
+        for inventory in self._inventories:
+            inventory.currency = value
 
     @staticmethod
     def load(data: dict) -> 'GuildInventory':
@@ -77,7 +79,7 @@ class GuildInventory():
     def remove_item(self, item: Item):
         self.itemShop.remove(item)
         
-    def can_buy_item(item: Item, user: Inventory) -> bool:
+    def can_buy_item(self, item: Item, user: Inventory) -> bool:
         """Check for whether the user can afford the item they are trying to purchase
 
         Args:
@@ -87,7 +89,7 @@ class GuildInventory():
         Returns:
             bool: Whether the user can purchase the item or not
         """
-        if user.balance <= item.value:
+        if user.balance >= item.value:
             return True
         
         return False
@@ -105,15 +107,6 @@ class GuildInventory():
             if item.id == id:
                 return item
         return None
-    
-    def save(self) -> dict:
-        return {
-            "guild_id": self.guildId,
-            "guild_name": self.guildName,
-            "currency": self.currency,
-            "inventory_limit": self.inventory_limit,
-            "itemshop": json.dumps([item.save() for item in self.itemShop])
-        }
     
     def toJSON(self) -> str:
         return json.dumps(self.save())
@@ -140,6 +133,15 @@ class GuildInventory():
             return True
         else:
             return False
+
+    def save(self) -> dict:
+        return {
+            "guild_id": self.guildId,
+            "guild_name": self.guildName,
+            "currency": self.currency,
+            "inventory_limit": self.inventory_limit,
+            "itemshop": json.dumps([item.save() for item in self.itemShop])
+        }
 
     def __str__(self) -> str:
         return f"Guild: {self._guildName} ({self._guildId}) - Inventories: {[inv for inv in self._inventories]}"

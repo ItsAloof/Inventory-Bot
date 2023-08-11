@@ -37,7 +37,7 @@ class Economy(commands.Cog):
 
     @slash_command(name="balancetop", description="View the top 10 balances", guild_ids=[1001667368801550439])
     async def balancetop(self, interaction: Interaction):
-        guild = self.bot._get_guild_inventory(interaction.guild_id)
+        guild = self.bot.get_guild_inventory(interaction.guild_id)
         if guild:
             top_users = self.bot.pgsql.get_top_balances(interaction.guild_id, 10)
             await interaction.response.send_message(self._format_top_balances(guild.currency, top_users), ephemeral=False)
@@ -48,7 +48,7 @@ class Economy(commands.Cog):
     async def addmoney(self, interaction: Interaction, amount: float = SlashOption(name="amount", description="The amount of money to add", required=True), username: User = SlashOption(name="user", description="The user to add the money to", required=False)):
         amount = Decimal(round(amount, 2))
         user = interaction.user if not username else username
-        guild = self.bot._get_guild_inventory(interaction.guild_id)
+        guild = self.bot.get_guild_inventory(interaction.guild_id)
         inventory = self.bot.get_user_inventory(interaction.guild_id, user)
 
         if inventory is None:
@@ -67,7 +67,7 @@ class Economy(commands.Cog):
     async def removemoney(self, interaction: Interaction, amount: float = SlashOption(name="amount", description="The amount of money to remove", required=True), username: User = SlashOption(name="user", description="The user to remove the money from", required=False)):
         amount = Decimal(round(amount, 2))
         user = interaction.user if not username else username
-        guild = self.bot._get_guild_inventory(interaction.guild.id)
+        guild = self.bot.get_guild_inventory(interaction.guild.id)
         
         if guild:
             inventory = guild.get_inventory(user)
@@ -85,7 +85,7 @@ class Economy(commands.Cog):
     @slash_command(name="setbalance", description="Set the balance of a player", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
     async def setbalance(self, interaction: Interaction, user: User = SlashOption(name="user", description="The user to set the balance of", required=True, verify=True), amount: float = SlashOption(name="amount", description="The amount to set the balance to", required=True)):
         amount = Decimal(round(amount, 2))
-        guild = self.bot._get_guild_inventory(interaction.guild_id)
+        guild = self.bot.get_guild_inventory(interaction.guild_id)
         if guild:
             inventory = guild.get_inventory(user)
             if inventory:
@@ -94,6 +94,13 @@ class Economy(commands.Cog):
                 await interaction.response.send_message(f"Set {user.mention}'s balance to {inventory.format_balance(guild.currency)}", ephemeral=True)
                 return
         await interaction.response.send_message("Could not find inventory", ephemeral=True)
+        
+    @slash_command(name="setcurrency", description="Set the currency for the server", guild_ids=[1001667368801550439])
+    async def setcurrency(self, interaction: Interaction, currency: str = SlashOption(name="currency", description="The currency to use for the server", required=True, max_length=5)):
+        guild = self.bot.get_guild_inventory(guild_id=interaction.guild_id)
+        guild.currency = currency
+        self.bot.pgsql.update_guild(guild)
+        await interaction.send(content="Successfully changed guild currency to {}".format(guild.currency))
 
 
 def setup(bot: InventoryBot) -> None:
