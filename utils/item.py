@@ -3,12 +3,13 @@ from uuid import UUID
 import uuid
 
 class Item():
-    def __init__(self, name: str, description: str, value: float, currency: str = '$', id: UUID = None) -> None:
+    def __init__(self, name: str, description: str, value: float, currency: str = '$', id: UUID = None, amount: int = 1) -> None:
         self._name = name
         self._description = description
         self._value = value
         self._id = id if id is not None else uuid.uuid4()
         self._currency = currency
+        self._amount = amount
 
     @property
     def name(self) -> str:
@@ -35,6 +36,22 @@ class Item():
     @description.setter
     def description(self, value: str) -> None:
         self._description = value
+        
+    @property
+    def amount(self) -> int:
+        """How many of this item there are
+
+        Returns:
+            int: The amount of items
+        """
+        
+    @amount.setter
+    def amount(self, value: int) -> None:
+        self._amount = value
+        
+    @property
+    def inc_amount(self, amount: int) -> None:
+        self._amount += amount
     
     @property
     def value(self) -> str:
@@ -47,7 +64,7 @@ class Item():
 
     @staticmethod
     def load(data: dict) -> 'Item':
-        return Item(data["name"], data["description"], data["value"], data["currency"], UUID(data["id"]))
+        return Item(**data)
     
     def toJSON(self):
         return json.dumps(self, default= lambda o: o.__dict__, sort_keys=True)
