@@ -44,12 +44,12 @@ class Item():
         Returns:
             int: The amount of items
         """
+        return self._amount
         
     @amount.setter
     def amount(self, value: int) -> None:
         self._amount = value
         
-    @property
     def inc_amount(self, amount: int) -> None:
         self._amount += amount
     
@@ -63,8 +63,8 @@ class Item():
         self._value = value
 
     @staticmethod
-    def load(data: dict) -> 'Item':
-        return Item(**data)
+    def load(data: dict, currency: str) -> 'Item':
+        return Item(**data, currency=currency)
     
     def toJSON(self):
         return json.dumps(self, default= lambda o: o.__dict__, sort_keys=True)
@@ -83,6 +83,7 @@ class Item():
     def __eq__(self, other: object) -> bool:
         if self._is_valid_operand(other):
             return other.id == self.id
+        return False
 
     def __repr__(self):
         return self.name

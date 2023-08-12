@@ -44,6 +44,7 @@ class EmbedCreator():
         embed = Embed(title=item.name, color=Colour.blue())
         embed.description = item.description
         embed.add_field(name='Value:', value=f'{currency}{item.value:,.2f}')
+        embed.add_field(name="Amount:", value=str(item.amount))
         return embed
     
     

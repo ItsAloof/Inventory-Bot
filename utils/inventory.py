@@ -97,6 +97,13 @@ class Inventory():
     def limit(self, value: int) -> None:
         self._limit = value
 
+    def get_item(self, id: str) -> Item | None:
+        for item in self._items:
+            if item.id == id:
+                return item
+            
+        return None
+
     @staticmethod
     def load(data: dict, currency: str) -> 'Inventory':
         """Loads an inventory from json data"""
@@ -120,10 +127,26 @@ class Inventory():
     def add_item(self, item: Item) -> bool:
         if self.can_add_item():
             self.balance -= decimal.Decimal(item.value)
-            self._items.append(item)
+            if item in self._items:
+                item.inc_amount(item.amount)
+            else:
+                self._items.append(item)
             return True
         else:
             return False
+        
+    def remove_item(self, id: str, amount: int = 1) -> bool:
+        item = self.get_item(id)
+        if item is None:
+            return False
+        
+        if item.amount < amount:
+            return False
+        
+        if item.amount == amount:
+            self._items.remove(item)
+        else:
+            item.amount -= amount
 
     def remove_item(self, index: int) -> Item | None:
         if index - 1 < len(self.items):
