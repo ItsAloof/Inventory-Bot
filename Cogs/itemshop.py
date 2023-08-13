@@ -34,10 +34,16 @@ class ItemShop(commands.Cog):
     @shopeditor.subcommand(name='add', description='Add an item to the itemshop')
     async def add(self, interaction: Interaction, name: str = SlashOption(name="name", description="The name of the item", required=True),
             value: float = SlashOption(name="value", description="The value of the item", required=True, min_value=0),
-            description: str = SlashOption(name="description", description="The item description", required=False)):
+            description: str = SlashOption(name="description", description="The item description", required=False),
+            image_url: str = SlashOption(name="url", description="A url for an image to display for the item", required=False)):
+
         guild = self.bot.get_guild_inventory(guild_id=interaction.guild_id)
         
-        new_item = Item(name=name, description=description, value=value)
+        if image_url is not None and not Item.valid_image_url(image_url):
+            await interaction.send(content="Invalid url entered.", ephemeral=True)
+            return
+        
+        new_item = Item(name=name, description=description, value=value, url=image_url)
         
         guild.itemShop.append(new_item)
         

@@ -1,15 +1,17 @@
 import json
 from uuid import UUID
 import uuid
+import re
 
 class Item():
-    def __init__(self, name: str, description: str, value: float, currency: str = '$', id: UUID = None, amount: int = 1) -> None:
+    def __init__(self, name: str, description: str, value: float, currency: str = '$', id: UUID = None, amount: int = 1, url: str = None) -> None:
         self._name = name
         self._description = description
         self._value = value
         self._id = id if id is not None else str(uuid.uuid4())
         self._currency = currency
         self._amount = amount
+        self._url = url
 
     @property
     def name(self) -> str:
@@ -19,6 +21,14 @@ class Item():
     @name.setter
     def name(self, value: str) -> None:
         self._name = value
+        
+    @property
+    def url(self):
+        return self._url
+    
+    @url.setter
+    def url(self, value: str):
+        self._url = value
 
     @property
     def id(self):
@@ -74,9 +84,17 @@ class Item():
             "name": self._name,
             "description": self._description,
             "value": self._value,
-            "id": str(self._id)
+            "id": str(self._id),
+            "url": self._url
         }
-    
+        
+    @staticmethod
+    def valid_image_url(url: str):
+        if re.match(r'(?:([^:/?#]+):)?(?:\/\/([^/?#]*))?([^?#]*\.(?:jpg|gif|png))(?:\?([^#]*))?(?:#(.*))?', url):
+            return True
+        return False
+        
+        
     def _is_valid_operand(self, other: object):
         return (hasattr(other, "id"))
     
