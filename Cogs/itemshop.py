@@ -14,8 +14,8 @@ class ItemShop(commands.Cog):
     async def shop(self, interaction: Interaction):
         guild = self.bot.get_guild_inventory(interaction.guild_id)
         user = self.bot.get_user_inventory(guild.guildId, interaction.user)
-        if len(guild.itemShop) == 0:
-            await interaction.send(content="There currently are not any items available in the itemshop")
+        if guild.itemShop.item_count == 0:
+            await interaction.send(content="There currently are no items available in the itemshop")
             return
         await interaction.response.send_message(view=ItemShopView(guild=guild, sql=self.bot.pgsql, user=user))
     
@@ -26,7 +26,7 @@ class ItemShop(commands.Cog):
     @shopeditor.subcommand(name="editor", description="Edit the itemshop within Discord")
     async def editor(self, interaction: Interaction):
         guild = self.bot.get_guild_inventory(interaction.guild_id)
-        if len(guild.itemShop) == 0:
+        if guild.itemShop.item_count == 0:
             await interaction.send(content="There currently are not any items available in the itemshop")
             return
         await interaction.send(view=EditorView(guild=guild, sql=self.bot.pgsql))
@@ -40,12 +40,12 @@ class ItemShop(commands.Cog):
         guild = self.bot.get_guild_inventory(guild_id=interaction.guild_id)
         
         if image_url is not None and not Item.valid_image_url(image_url):
-            await interaction.send(content="Invalid url entered.", ephemeral=True)
+            await interaction.send(content="Invalid URL entered.", ephemeral=True)
             return
         
         new_item = Item(name=name, description=description, value=value, url=image_url)
         
-        guild.itemShop.append(new_item)
+        guild.itemShop.add_item(new_item)
         
         self.bot.pgsql.update_guild(guild)
         await interaction.send(content="Added new item to Item Shop:", embed=EmbedCreator.item_embed(new_item, guild.currency))

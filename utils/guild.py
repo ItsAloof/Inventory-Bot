@@ -1,15 +1,16 @@
 from discord import User
 from utils.inventory import Inventory
 from utils.item import Item
+from utils.itemstore import ItemStore
 import json
 
 class GuildInventory():
-    def __init__(self, guildId: int, guildName: str, inventory_size: int = None, inventories: list[Inventory] = None, currency: str = "$", itemshop: list[Item] = None) -> None:
+    def __init__(self, guildId: int, guildName: str, inventory_size: int = None, inventories: list[Inventory] = None, currency: str = "$", items: list[Item] = None) -> None:
         self._inventory_limit = inventory_size
         self._guildId = guildId
         self._guildName = guildName
         self._inventories: list[Inventory] = inventories if inventories else []
-        self._itemshop: list[Item] = itemshop if itemshop is not None else []
+        self._itemshop = ItemStore(guildId, items)
         self._currency = currency
     
     @property
@@ -25,7 +26,7 @@ class GuildInventory():
         return self._inventories
     
     @property
-    def itemShop(self) -> list[Item]:
+    def itemShop(self):
         """The items available for purchase within the guild for users
 
         Returns:
@@ -71,13 +72,6 @@ class GuildInventory():
         if data.get('itemshop') is not None:
             itemshop = [Item(**item) for item in data.get('itemshop')]
         return GuildInventory(data["guildId"], data["guildName"], data["inventory_limit"], inventories, data["currency"], itemshop)
-
-    def add_items(self, items: dict):
-        item_list = [Item(**item) for item in items]
-        self.itemShop.extend(item_list)
-    
-    def remove_item(self, item: Item):
-        self.itemShop.remove(item)
         
     def can_buy_item(self, item: Item, user: Inventory) -> bool:
         """Check for whether the user can afford the item they are trying to purchase
@@ -93,20 +87,6 @@ class GuildInventory():
             return True
         
         return False
-        
-    def get_item(self, id: str) -> Item | None:
-        """Get an item within the guilds itemshop
-
-        Args:
-            id (str): The id of the item
-
-        Returns:
-            Item | None: The item being checked for if exists else None
-        """
-        for item in self.itemShop:
-            if item.id == id:
-                return item
-        return None
     
     def toJSON(self) -> str:
         return json.dumps(self.save())
@@ -140,7 +120,7 @@ class GuildInventory():
             "guild_name": self.guildName,
             "currency": self.currency,
             "inventory_limit": self.inventory_limit,
-            "itemshop": json.dumps([item.save() for item in self.itemShop])
+            "itemshop": self.itemShop.save()
         }
 
     def __str__(self) -> str:

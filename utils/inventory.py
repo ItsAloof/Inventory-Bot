@@ -125,7 +125,10 @@ class Inventory():
         return len(self.items) < self._limit
     
     def add_item(self, item: Item):
-        self.items.append(item)
+        if item in self._items:
+            self.get_item(item.id).amount += item.amount
+        else:
+            self.items.append(item)
         
     def remove_item(self, id: str, amount: int = 1) -> bool:
         item = self.get_item(id)

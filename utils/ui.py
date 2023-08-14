@@ -14,6 +14,7 @@ from utils.guild import GuildInventory
 from utils.item import Item
 from utils.pgsql import Query
 from utils.inventory import Inventory
+from utils.itemstore import ItemStore
 
 class EmbedCreator():
     
@@ -56,7 +57,7 @@ class ItemSelector(nextcord.ui.StringSelect):
         super().__init__(custom_id=custom_id, placeholder=placeholder, min_values=min_values, max_values=max_values, options=options, disabled=disabled, row=row)
         self.guild = guild
         self.buttons_added = False
-        for item in self.guild.itemShop:
+        for item in self.guild.itemShop.items:
             description = item.description if len(item.description) <= 100 else item.description[:97] + '...'
             self.add_option(label=item.name, value=str(item.id), description=description)
         
@@ -83,7 +84,7 @@ class ItemSelector(nextcord.ui.StringSelect):
         
         self.buttons_added = True
         selected = self.values[0]
-        self.view._selected_item = self.guild.get_item(selected)
+        self.view._selected_item = self.guild.itemShop.get_item(selected)
         await interaction.response.edit_message(embed=EmbedCreator.item_embed(currency=self.guild.currency, item=self.view._selected_item), view=self.view)
         
 class EditorView(nextcord.ui.View):
@@ -166,9 +167,10 @@ class BuyButton(nextcord.ui.Button):
     def __init__(self, *, style: ButtonStyle = ButtonStyle.green, label: str | None = "Buy", disabled: bool = False, custom_id: str | None = None, 
                  url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1) -> None:
         super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
-    
+        
     async def callback(self, interaction: Interaction) -> None:
-        if not isinstance(self.view, ItemShopView) and self._selected_item is not None:
+        
+        if not isinstance(self.view, ItemShopView) and self.view._selected_item is not None:
             await interaction.send(content="The item is invalid")
             return
         
@@ -178,14 +180,13 @@ class BuyButton(nextcord.ui.Button):
         if not isinstance(self.view._selected_item, Item):
             await interaction.send(content="This item is no longer available for purchase")
             return
-        
-        if not self.view.guild.can_buy_item(item=self.view._selected_item, user=self.view.user):
-            await interaction.send(content="You cannot afford this item!")
-            return
             
         item: Item = self.view._selected_item
         user: Inventory = self.view.user
-        guild: GuildInventory = self.view.guild
-        if self.view.user.add_item(Item(name=item.name, description=item.description, value=item.value, id=item.id, currency=guild.currency)):
-            self.view.sql.update_user(guild_id=guild.guildId, inventory=user)
+        itemstore: ItemStore = self.view.guild.itemShop
+        
+        if itemstore.buy_item(item, user):
+            self.view.sql.update_user(itemstore.guild_id, user)
             await interaction.send(content="Successfully added item:", embed=EmbedCreator.item_embed(item, self.view.guild.currency))
+        else:
+            await interaction.send(content="You cannot afford this item!")
