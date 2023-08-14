@@ -124,16 +124,8 @@ class Inventory():
             return True
         return len(self.items) < self._limit
     
-    def add_item(self, item: Item) -> bool:
-        if self.can_add_item():
-            self.balance -= decimal.Decimal(item.value)
-            if item in self._items:
-                item.inc_amount(item.amount)
-            else:
-                self._items.append(item)
-            return True
-        else:
-            return False
+    def add_item(self, item: Item):
+        self.items.append(item)
         
     def remove_item(self, id: str, amount: int = 1) -> bool:
         item = self.get_item(id)
