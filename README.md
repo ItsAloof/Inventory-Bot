@@ -13,13 +13,13 @@ A Discord bot that adds an economy to a server along with an inventory system wi
         - ```value``` - The cost to purchase item **_Required_**
         - ```image url``` - A url to an image to display when
         - ```amount``` - The amount of an item *(defaults to 1)*
-#### Item Example
-![alt text](https://i.imgur.com/QhRvk6a.png "Item example in Discord")  
     - Inventory system for each user per server.
     - Guild Item shop where admins can add custom items.
     - Can configure settings for your server to limit inventory sizes.
   * Database
     - Utilizes PostgreSQL for storing data on servers and users.
+#### Item Example
+![alt text](https://i.imgur.com/QhRvk6a.png "Item example in Discord")  
 
 ## Commands
 Slash commands available for use with the bot
