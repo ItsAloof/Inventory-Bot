@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, List, Callable
+from typing import Any, List, Callable, Optional, Union
 import nextcord
 from nextcord import Embed
 from nextcord.colour import Colour
@@ -190,3 +190,35 @@ class BuyButton(nextcord.ui.Button):
             await interaction.send(content="Successfully added item:", embed=EmbedCreator.item_embed(item, self.view.guild.currency))
         else:
             await interaction.send(content="You cannot afford this item!")
+
+class EditUserInventoryView(nextcord.ui.View):
+    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, user: Inventory, guild: GuildInventory, remove: bool) -> None:
+        super().__init__(timeout=timeout, auto_defer=auto_defer)
+
+        self.add_item(UserItemSelector(user=user))
+        
+
+class UserItemSelector(nextcord.ui.StringSelect):
+    def __init__(self, *, custom_id: str = "user-item-selector", placeholder: str | None = "Select an item", min_values: int = 1, max_values: int = 1, 
+                 options: List[SelectOption] = None, 
+                 disabled: bool = False, row: int | None = 2, user: Inventory, items: List[Item], remove: bool) -> None:
+                 
+        options = [SelectOption(label=item.name, value=str(item.id), description=(item.description if len(item.description) <= 100 else item.description[:97] + '...')) for item in items]
+        super().__init__(custom_id=custom_id, placeholder=placeholder, min_values=min_values, max_values=max_values, options=options, disabled=disabled, row=row)
+        self._selected_item = None
+        self.remove_mode = remove
+        
+    async def callback(self, interaction: Interaction) -> None:
+        assert self.view is not None
+        self.view: EditUserInventoryView
+            
+        
+
+class DeleteUserItemBtn(nextcord.ui.Button):
+    def __init__(self, *, style: ButtonStyle = ButtonStyle.red, label: str | None = "Remove All", disabled: bool = False, custom_id: str | None = "remove-all-button", url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1) -> None:
+        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+        
+    async def callback(self, interaction: Interaction) -> None:
+        assert self.view is not None
+        
+        
