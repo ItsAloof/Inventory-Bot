@@ -15,6 +15,11 @@ from utils.item import Item
 from utils.pgsql import Query
 from utils.inventory import Inventory
 from utils.itemstore import ItemStore
+from enum import Enum
+
+class ItemSelectorType(Enum):
+    ADD_ITEM = 1
+    REMOVE_ITEM = 2
 
 class EmbedCreator():
     
@@ -192,10 +197,17 @@ class BuyButton(nextcord.ui.Button):
             await interaction.send(content="You cannot afford this item!")
 
 class EditUserInventoryView(nextcord.ui.View):
-    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, user: Inventory, guild: GuildInventory, remove: bool) -> None:
+    def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, user: Inventory, guild: GuildInventory, selectorType: ItemSelectorType) -> None:
         super().__init__(timeout=timeout, auto_defer=auto_defer)
+        self.selectorType = selectorType
+        self._selected_item = None
+        self.guild = guild
+        self.user = user
 
-        self.add_item(UserItemSelector(user=user))
+        if selectorType == ItemSelectorType.ADD_ITEM:
+            self.add_item(UserItemSelector(user=user, items=guild.itemShop.items))
+        elif selectorType == ItemSelectorType.REMOVE_ITEM:
+            self.add_item(UserItemSelector(user=user, items=user.items))
         
 
 class UserItemSelector(nextcord.ui.StringSelect):
@@ -205,20 +217,55 @@ class UserItemSelector(nextcord.ui.StringSelect):
                  
         options = [SelectOption(label=item.name, value=str(item.id), description=(item.description if len(item.description) <= 100 else item.description[:97] + '...')) for item in items]
         super().__init__(custom_id=custom_id, placeholder=placeholder, min_values=min_values, max_values=max_values, options=options, disabled=disabled, row=row)
-        self._selected_item = None
         self.remove_mode = remove
         
     async def callback(self, interaction: Interaction) -> None:
         assert self.view is not None
         self.view: EditUserInventoryView
-            
         
+        self.view._selected_item = self.view.guild.itemShop.get_item(self.values[0])
+        
+        if self.view.selectorType == ItemSelectorType.ADD_ITEM:
+            self.view.add_item(AddUserItemBtn())
+        elif self.view.selectorType == ItemSelectorType.REMOVE_ITEM:
+            self.view.add_item(DeleteUserItemBtn())
+        
+        self.view.add_item()
 
+class AmountSelect(nextcord.ui.StringSelect):
+    def __init__(self, *, custom_id: str = ..., placeholder: str | None = None, min_values: int = 1, max_values: int = 1, options: List[SelectOption] = None, disabled: bool = False, row: int | None = 1) -> None:
+        super().__init__(custom_id=custom_id, placeholder=placeholder, min_values=min_values, max_values=max_values, options=options, disabled=disabled, row=row)
+        
+class EditUserModal(nextcord.ui.Modal):
+    def __init__(self, title: str, *, timeout: float | None = 180, custom_id: str = "edit-user-item-modal", auto_defer: bool = True) -> None:
+        super().__init__(title, timeout=timeout, custom_id=custom_id, auto_defer=auto_defer)
+        
+        
+class EditUserItemBtn(nextcord.ui.Button):
+    def __init__(self, *, style: ButtonStyle = ButtonStyle.secondary, label: str | None = "Edit Amount", disabled: bool = False, custom_id: str | None = "edit-user-item", url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1, item: Item) -> None:
+        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+        self.item = item
+        
+        
+    async def callback(self, interaction: Interaction) -> None:
+        ...
+        
+    
 class DeleteUserItemBtn(nextcord.ui.Button):
     def __init__(self, *, style: ButtonStyle = ButtonStyle.red, label: str | None = "Remove All", disabled: bool = False, custom_id: str | None = "remove-all-button", url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1) -> None:
         super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
         
     async def callback(self, interaction: Interaction) -> None:
         assert self.view is not None
+        
+class AddUserItemBtn(nextcord.ui.Button):
+    def __init__(self, *, style: ButtonStyle = ButtonStyle.green, label: str = "Add Item", disabled: bool = False, custom_id: str | None = "add-user-item-btn", url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1) -> None:
+        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+        
+        
+    async def callback(self, interaction: Interaction) -> None:
+        assert self.view is not None
+        
+        self.view: EditUserInventoryView
         
         
