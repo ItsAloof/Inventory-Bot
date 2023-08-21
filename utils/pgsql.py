@@ -56,11 +56,12 @@ class Query():
             GuildID bigint PRIMARY KEY,
             GuildName varchar(255),
             Currency varchar(10),
-            MaxInventory integer
+            MaxInventory integer,
+            ItemShop json
         );
         
-        insert into Guilds(GuildID, GuildName, Currency, MaxInventory) 
-        values (%(guild_id)s, %(guild_name)s, %(currency)s, %(max_inventory)s, %(itemshop)s);
+        insert into Guilds(GuildID, GuildName, Currency, MaxInventory, ItemShop) 
+        values (%(guild_id)s, %(guild_name)s, %(currency)s, %(inventory_limit)s, %(itemshop)s);
         
         create table if not exists Guild%(guild_id)s(
             MemberID bigint PRIMARY KEY,
@@ -99,6 +100,9 @@ class Query():
         
         result = cur.fetchone()
         cur.close()
+        if result is None:
+            return None
+        
         return { 'guildId': result[0], 'guildName': result[1], 'currency': result[2], 'inventory_limit': result[3], 'itemshop': result[4] }
         
     def update_guild(self, guild: GuildInventory):
