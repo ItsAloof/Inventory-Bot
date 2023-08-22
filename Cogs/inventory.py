@@ -4,7 +4,7 @@ from nextcord.ext import commands
 from nextcord.application_command import slash_command
 from main import InventoryBot
 from utils.item import Item
-from utils.ui import EmbedCreator
+from utils.ui import EmbedCreator, EditUserInventoryView, ItemSelectorType
 
 class InventoryCmd(commands.Cog):
     def __init__(self, bot: InventoryBot):
@@ -12,25 +12,34 @@ class InventoryCmd(commands.Cog):
     
     
     @slash_command(name="inventory", description="View your inventory", guild_ids=[1001667368801550439])
-    async def inventory(self, interaction: Interaction, user: str = SlashOption(name="user", description="The user to view the inventory of", required=False)):
-        if user:
-            await interaction.response.send_message(f"Viewing {user}'s inventory")
+    async def inventory(self, interaction: Interaction, user: User = SlashOption(name="user", description="The user to view the inventory of", required=False)):
+        inventory = self.bot.get_user_inventory(interaction.guild_id, user if user is not None else interaction.user)
+        embeds = EmbedCreator.many_item_embeds(inventory.items, inventory.currency)
+        if len(inventory.items) == 0:
+            await interaction.send(content="There are no items to show", ephemeral=True)
+            return
+        
+        if user is not None:
+            await interaction.response.send_message(f"Viewing {user.name}'s inventory", embeds=embeds)
+            return
         else:
-            inventory = self.bot.get_user_inventory(interaction.guild_id, interaction.user)
-            embeds = EmbedCreator.many_item_embeds(inventory.items, inventory.currency)
             await interaction.response.send_message(content=f"**{inventory.name}'s Inventory**", embeds=embeds)
-            # await interaction.response.send_message(str(inventory), ephemeral=True)
 
 
     @slash_command(name="additem", description="Add an item to your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
-    async def additem(self, interaction: Interaction):
+    async def additem(self, interaction: Interaction, user: User = SlashOption(name="user", description="The user to give the item", required=True)):
         guild = self.bot.get_guild_inventory(interaction.guild_id)
-        user = self.bot.get_user_inventory(guild.guildId, interaction.user)
+        user = self.bot.get_user_inventory(guild.guildId, user)
+        
+        if guild.itemShop.item_count == 0:
+            await interaction.send(content="There are no available items in the guilds item shop!", ephemeral=True)
+            return
         
         if guild is None or user is None:
             await interaction.send(content="Inventory not found for user: {}".format(user.name))
             return
         
+        await interaction.send(view=EditUserInventoryView(user=user, guild=guild, selectorType=ItemSelectorType.ADD_ITEM, sql=self.bot.pgsql))
         
 
     @slash_command(name="removeitem", description="Remove an item from your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
