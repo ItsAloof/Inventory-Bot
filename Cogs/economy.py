@@ -95,7 +95,7 @@ class Economy(commands.Cog):
                 return
         await interaction.response.send_message("Could not find inventory", ephemeral=True)
         
-    @slash_command(name="setcurrency", description="Set the currency for the server", guild_ids=[1001667368801550439])
+    @slash_command(name="setcurrency", description="Set the currency for the server", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
     async def setcurrency(self, interaction: Interaction, currency: str = SlashOption(name="currency", description="The currency to use for the server", required=True, max_length=5)):
         guild = self.bot.get_guild_inventory(guild_id=interaction.guild_id)
         guild.currency = currency
