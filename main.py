@@ -15,13 +15,6 @@ class InventoryBot(commands.Bot):
         super().__init__(**kwargs)
         self.load_cogs()
         self.pgsql = Query()
-        # Structure:
-        # {
-        #   guild_id: {
-        #       inventories: [GuildInventory]
-        #       last_used: DateTime
-        #   }
-        #}
         self._guildInventories = {}
 
     def load_cogs(self):

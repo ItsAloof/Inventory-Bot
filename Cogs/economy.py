@@ -41,8 +41,6 @@ class Economy(commands.Cog):
         if guild:
             top_users = self.bot.pgsql.get_top_balances(interaction.guild_id, 10)
             await interaction.response.send_message(self._format_top_balances(guild.currency, top_users), ephemeral=False)
-            # msg = '\n'.join([f"{i+1}. {inventory.name}: {inventory.format_balance(guild.currency)}" for i, inventory in enumerate(guild.get_baltop())])
-            # await interaction.response.send_message(msg, ephemeral=False)
     
     @slash_command(name="addmoney", description="Add money to your balance", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
     async def addmoney(self, interaction: Interaction, amount: float = SlashOption(name="amount", description="The amount of money to add", required=True), username: User = SlashOption(name="user", description="The user to add the money to", required=False)):
