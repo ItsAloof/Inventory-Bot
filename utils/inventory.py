@@ -97,7 +97,31 @@ class Inventory():
     def limit(self, value: int) -> None:
         self._limit = value
 
+
     def get_item(self, id: str) -> Item | None:
+        """Get a copy of an item from the users inventory
+
+        Args:
+            id (str): The id for the item to get
+
+        Returns:
+            Item | None: The item if it exists within the users inventory else None
+        """
+        item = self._get_item(id)
+        if item is None:
+            return None
+        return Item(**self._get_item(id).save())
+
+    
+    def _get_item(self, id: str) -> Item | None:
+        """A private method for getting the actual item within the users inventory
+
+        Args:
+            id (str): The id of the item to get
+
+        Returns:
+            Item | None: The item if it exists within the users inventory else None
+        """
         for item in self._items:
             if item.id == id:
                 return item
@@ -128,10 +152,10 @@ class Inventory():
         if item in self._items:
             self.get_item(item.id).amount += item.amount
         else:
-            self.items.append(item)
+            self.items.append(Item(**item.save()))
         
     def remove_item(self, id: str, amount: int = 1) -> bool:
-        item = self.get_item(id)
+        item = self._get_item(id)
         if item is None:
             return False
         
@@ -142,14 +166,6 @@ class Inventory():
             self._items.remove(item)
         else:
             item.amount -= amount
-
-    def remove_item(self, index: int) -> Item | None:
-        if index - 1 < len(self.items):
-            item = self.items[item - 1]
-            self.items.remove(item)
-            return item
-        else:
-            return None
         
     def clear(self) -> None:
         self._items.clear()

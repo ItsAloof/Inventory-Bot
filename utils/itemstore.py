@@ -39,7 +39,7 @@ class ItemStore():
         """
         for item in self._items:
             if item.id == id:
-                return item
+                return Item(**item.save())
         
         return None
     

@@ -43,40 +43,34 @@ class InventoryCmd(commands.Cog):
         
 
     @slash_command(name="removeitem", description="Remove an item from your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
-    async def removeitem(self, interaction: Interaction, index: int = SlashOption(name="index", 
-    description="Which item to remove starting from 1 to your inventory size", required=True), 
-    username: User = SlashOption(name="user", description="The user to remove the item from", required=False)):
-    
-        user = interaction.user if not username else username
+    async def removeitem(self, interaction: Interaction, user: User = SlashOption(name="user", description="The user to remove an item from", required=True)):
+        inventory = self.bot.get_user_inventory(interaction.guild_id, user)
         guild = self.bot.get_guild_inventory(interaction.guild.id)
-        if guild:
-            inventory = guild.get_inventory(user)
-            if len(inventory.items) == 0:
-                msg = "Your inventory is empty" if user == interaction.user else f"{user.name}'s inventory is empty"
-                await interaction.response.send_message(msg, ephemeral=True)
-                return
-            if inventory:
-                item = inventory.remove_item(index)
-                if item:
-                    self.bot.save_inventories()
-                    msg = f"Removed {item.name} from your inventory" if user == interaction.user else f"Removed {item.name} from {user.name}'s inventory"
-                    await interaction.response.send_message(msg, ephemeral=True)
-                    return
-                else:
-                    await interaction.response.send_message(f"Invalid number, please enter a number between 1 and {len(inventory.items)}", ephemeral=True)
-                    return
-        await interaction.response.send_message("Could not find inventory", ephemeral=True)
+
+        if guild is None or inventory is None:
+            await interaction.send(content="Something went wrong!", ephemeral=True)
+            return
+
+        
+        if len(inventory.items) == 0:
+            await interaction.send(content="This user has not items to remove.", ephemeral=True)
+            return
+        
+        await interaction.send(view=EditUserInventoryView(user=inventory, guild=guild, selectorType=ItemSelectorType.REMOVE_ITEM, sql=self.bot.pgsql))
+        
 
     @slash_command(name="clearinventory", description="Clear your or another users inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
     async def clearinventory(self, interaction: Interaction, username: User = SlashOption(name="user", description="The user to clear the inventory of", required=False)):
         user = interaction.user if not username else username
         inventory = self.bot.get_user_inventory(interaction.guild_id, user)
+        
         if inventory is None:
             await interaction.send(content="No inventory found!")
             return
         
         inventory.clear()
         self.bot.pgsql.update_user(interaction.guild_id, inventory)
+        
         msg = f"Your inventory has been cleared" if user == interaction.user else f"{user}'s inventory has been cleared"
         await interaction.response.send_message(msg, ephemeral=True)
         
@@ -84,11 +78,14 @@ class InventoryCmd(commands.Cog):
     @slash_command(name="maxitems", description="Set the max items for the guild", default_member_permissions=Permissions(administrator=True))
     async def maxitems(self, interaction: Interaction, maxitems: int = SlashOption(name="maxitems", description="The max items to set", required=True)):
         guild = self.bot.get_guild_inventory(interaction.guild.id)
+
         if guild is None:
             await interaction.send(content="Something went wrong!")
             return
+        
         guild.inventory_limit = maxitems
         self.bot.pgsql.update_guild(guild)
+        
         await interaction.response.send_message(f"Set max items to {maxitems}", ephemeral=True)
         
         

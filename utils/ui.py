@@ -225,14 +225,19 @@ class UserItemSelector(nextcord.ui.StringSelect):
         assert self.view is not None
         self.view: EditUserInventoryView
         
-        self.view._selected_item = self.view.guild.itemShop.get_item(self.values[0])
         
         if self.view.selectorType == ItemSelectorType.ADD_ITEM:
+            self.view._selected_item = self.view.guild.itemShop.get_item(self.values[0])
             self.view.add_item(AddUserItemBtn(item=self.view._selected_item, user=self.view.user))
+            self.view.add_item(EditUserItemBtn(item=self.view._selected_item))
         elif self.view.selectorType == ItemSelectorType.REMOVE_ITEM:
+            self.view._selected_item = self.view.user.get_item(self.values[0])
+            if self.view._selected_item is None:
+                await interaction.send(content="That item is no longer available to select.", ephemeral=True)
+                return
             self.view.add_item(DeleteUserItemBtn(item=self.view._selected_item, user=self.view.user))
+            self.view.add_item(EditUserItemBtn(item=self.view._selected_item, max_amount=self.view._selected_item.amount))
         
-        self.view.add_item(EditUserItemBtn(item=self.view._selected_item))
         await interaction.response.edit_message(view=self.view, embed=EmbedCreator.item_embed(self.view._selected_item, self.view.guild.currency))
 
 class AmountSelect(nextcord.ui.TextInput):
@@ -240,16 +245,23 @@ class AmountSelect(nextcord.ui.TextInput):
         super().__init__(label, style=style, custom_id=custom_id, row=row, min_length=min_length, max_length=max_length, required=required, default_value=default_value, placeholder=placeholder)
         
 class EditItemModal(nextcord.ui.Modal):
-    def __init__(self, title: str, *, timeout: float | None = 180, custom_id: str = "edit-user-item-modal", auto_defer: bool = True, item: Item) -> None:
+    def __init__(self, title: str, *, timeout: float | None = 180, custom_id: str = "edit-user-item-modal", auto_defer: bool = True, max_amount: int | None = None, item: Item) -> None:
         super().__init__(title, timeout=timeout, custom_id=custom_id, auto_defer=auto_defer)
         self.amount_input = AmountSelect(label="Item Count")
         self.add_item(self.amount_input)
         self.item = item
+        self.max_amount = max_amount
         
         
     async def callback(self, interaction: Interaction) -> None:
         try:
-            self.item.amount = int(self.amount_input.value)
+            self.amount = int(self.amount_input.value)
+            
+            if self.max_amount is not None:
+                if self.amount > self.max_amount:
+                    self.amount = self.max_amount
+
+            self.item.amount = self.amount       
             await interaction.response.edit_message(embed=EmbedCreator.item_embed(self.item, self.item._currency))
         except Exception as e:
             print(e)
@@ -257,24 +269,36 @@ class EditItemModal(nextcord.ui.Modal):
         
 class EditUserItemBtn(nextcord.ui.Button):
     def __init__(self, *, style: ButtonStyle = ButtonStyle.secondary, label: str | None = "Edit Amount", disabled: bool = False, custom_id: str | None = "edit-user-item", 
-                 url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1, item: Item) -> None:
+                 url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1, max_amount: int | None = None, item: Item) -> None:
         super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
         self.item = item
+        self.max_amount = max_amount
         
         
     async def callback(self, interaction: Interaction) -> None:
-        await interaction.response.send_modal(EditItemModal(title=f"Edit {self.item.name}", item=self.item))
+        await interaction.response.send_modal(EditItemModal(title=f"Edit {self.item.name}", item=self.item, max_amount=self.max_amount))
         
     
 class DeleteUserItemBtn(nextcord.ui.Button):
-    def __init__(self, *, style: ButtonStyle = ButtonStyle.red, label: str | None = "Remove All", disabled: bool = False, custom_id: str | None = "remove-all-button", url: str | None = None, 
+    def __init__(self, *, style: ButtonStyle = ButtonStyle.red, label: str | None = "Delete", disabled: bool = False, custom_id: str | None = "remove-all-button", url: str | None = None, 
                  emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 1, item: Item, user: Inventory) -> None:
         super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
         self.item = item
         self.user = user
+        self.max_amount = item.amount
         
     async def callback(self, interaction: Interaction) -> None:
         assert self.view is not None
+        self.view: EditUserInventoryView
+        
+        if self.item is None:
+            await interaction.send(content="Item is no longer available", ephemeral=True)
+            return
+        
+        self.user.remove_item(self.item.id, self.item.amount)
+        self.view.sql.update_user(self.view.guild.guildId, self.user)
+        await interaction.send(content=f"Successfully removed item from {self.user.name} inventory", embed=EmbedCreator.item_embed(self.item, self.view.guild.currency))
+        
         
 class AddUserItemBtn(nextcord.ui.Button):
     def __init__(self, *, style: ButtonStyle = ButtonStyle.green, label: str = "Add Item", disabled: bool = False, custom_id: str | None = "add-user-item-btn", url: str | None = None, 
@@ -288,6 +312,6 @@ class AddUserItemBtn(nextcord.ui.Button):
         self.view: EditUserInventoryView
         self.view.user.add_item(self.item)
         self.view.sql.update_user(self.view.guild.guildId, self.view.user)
-        await interaction.send(content=f"Successfully added item to {self.view.user.name}", embed=EmbedCreator.item_embed(self.item, self.view.guild.currency))
+        await interaction.send(content=f"Successfully added item to {self.view.user.name} inventory", embed=EmbedCreator.item_embed(self.item, self.view.guild.currency))
         
         

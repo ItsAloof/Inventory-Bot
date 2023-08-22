@@ -10,7 +10,7 @@ class Item():
         self._value = value
         self._id = id if id is not None else str(uuid.uuid4())
         self._currency = currency
-        self._amount = amount
+        self._amount = int(amount)
         self._url = url
 
     @property
@@ -85,6 +85,7 @@ class Item():
             "description": self._description,
             "value": self._value,
             "id": str(self._id),
+            "amount": self._amount,
             "url": self._url
         }
         
