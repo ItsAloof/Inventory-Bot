@@ -11,12 +11,13 @@ class Economy(commands.Cog):
         self.bot = bot
 
     @slash_command(name="balance", description="View your balance", guild_ids=[1001667368801550439])
-    async def balance(self, interaction: Interaction):
-        inventory: Inventory = self.bot.get_user_inventory(interaction.guild.id, interaction.user)
+    async def balance(self, interaction: Interaction, user: User = SlashOption(name="user", description="The user to check the balance of", required=False)):
+        user = user if user is not None else interaction.user
+        inventory: Inventory = self.bot.get_user_inventory(interaction.guild.id, user)
         if inventory is None:
             await interaction.response.send_message("Could not find inventory", ephemeral=True)
 
-        await interaction.response.send_message(f"Your balance is {inventory.format_balance(self.bot.get_currency(interaction.guild_id))}", ephemeral=True)
+        await interaction.response.send_message(("Your" if user == interaction.user else user.name + '\'s') + f" balance is {inventory.format_balance(self.bot.get_currency(interaction.guild_id))}", ephemeral=True)
         
 
     def _format_top_balances(self, currency: str, users: list[dict]) -> str:
@@ -84,14 +85,26 @@ class Economy(commands.Cog):
     async def setbalance(self, interaction: Interaction, user: User = SlashOption(name="user", description="The user to set the balance of", required=True, verify=True), amount: float = SlashOption(name="amount", description="The amount to set the balance to", required=True)):
         amount = Decimal(round(amount, 2))
         guild = self.bot.get_guild_inventory(interaction.guild_id)
-        if guild:
-            inventory = guild.get_inventory(user)
-            if inventory:
-                inventory.balance = amount
-                self.bot.pgsql.update_user(guild.guildId, inventory)
-                await interaction.response.send_message(f"Set {user.mention}'s balance to {inventory.format_balance(guild.currency)}", ephemeral=True)
-                return
-        await interaction.response.send_message("Could not find inventory", ephemeral=True)
+        if guild is None:
+            await interaction.send(content="No guild found", ephemeral=True)
+            return
+        
+        inventory = self.bot.get_user_inventory(interaction.guild_id, user)
+        if inventory is None:
+            await interaction.send(content="No user found!", ephemeral=True)
+            return
+        
+        inventory.balance = amount
+        self.bot.pgsql.update_user(interaction.guild_id, inventory)
+        await interaction.send(f"Set {user.mention}'s balance to {inventory.format_balance(guild.currency)}", ephemeral=True)
+        # if guild:
+        #     inventory = guild.get_inventory(user)
+        #     if inventory:
+        #         inventory.balance = amount
+        #         self.bot.pgsql.update_user(guild.guildId, inventory)
+        #         await interaction.response.send_message(f"Set {user.mention}'s balance to {inventory.format_balance(guild.currency)}", ephemeral=True)
+        #         return
+        # await interaction.response.send_message("Could not find inventory", ephemeral=True)
         
     @slash_command(name="setcurrency", description="Set the currency for the server", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
     async def setcurrency(self, interaction: Interaction, currency: str = SlashOption(name="currency", description="The currency to use for the server", required=True, max_length=5)):
