@@ -106,7 +106,10 @@ class RPS(Game):
         embed = Embed(color=self.gamestate.value, title=f"{self.player.name} VS AloofBot in Rock, Paper, Scissors!", description=f"Round {self._round} of {self._max_rounds}")
         embed.add_field(name=f"{self.player.name} Wins", value=self._game_record_to_str(True))
         embed.add_field(name=f"AloofBot Wins", value=self._game_record_to_str(False))
-        embed.add_field(name=f"You chose {self._player_hand.value}", value=f"AloofBot chose {self._bot_hand.value}", inline=False)
+
+        if self._player_hand is not None:
+            embed.add_field(name=f"You chose {self._player_hand.value}", value=f"AloofBot chose {self._bot_hand.value}", inline=False)
+            
         if len(self._game_record) == 0 or self.gamestate == GameState.DRAW:
             win_msg = "Draw!"
         else:

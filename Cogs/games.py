@@ -16,11 +16,16 @@ class Games(commands.Cog):
                   interaction: Interaction, 
                   wager: float = SlashOption(name="bet", description="The amount of money you wish to bet", required=True), 
                   best_of: int = SlashOption(name="rounds", description="How many rounds to play best of", required=False, default=1)):
-
+        
         inventory = self.bot.get_user_inventory(interaction.guild_id, interaction.user)
+        
+        if inventory.balance < wager:
+            await interaction.send("You cannot afford this wager!", ephemeral=True)
+            return
+        
         guild = self.bot.get_guild_inventory(interaction.guild_id)
         game = RPS(inventory, guild, wager, self.bot.pgsql, best_of)
-        await interaction.send(view=RPSView(timeout=300, rps_game=game))
+        await interaction.send(view=RPSView(timeout=300, rps_game=game), embed=game.game_embed())
 
     
     @nextcord.slash_command(name="coinflip", description="Flip a coin.", guild_ids=[1001667368801550439])
