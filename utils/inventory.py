@@ -42,14 +42,16 @@ class Inventory():
         self._currency = value
 
     def deposit(self, amount: int) -> bool:
+        amount = decimal.Decimal(amount)
         if amount > 0:
             self._balance += amount
             return True
         return False
     
     def withdraw(self, amount: float) -> bool:
+        amount = decimal.Decimal(amount)
         if amount > 0 and amount <= self._balance:
-            self._balance -= decimal.Decimal(amount)
+            self._balance -= amount
             return True
         return False
     

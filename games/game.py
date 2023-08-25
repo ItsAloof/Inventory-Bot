@@ -7,7 +7,7 @@ from decimal import Decimal
 from nextcord import Embed, Colour
 from enum import Enum
 
-class GameState(Enum):
+class GameState(int, Enum):
     PLAYING = Colour.blue()
     LOST = Colour.red()
     WON = Colour.green()
