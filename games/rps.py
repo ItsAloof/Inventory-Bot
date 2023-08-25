@@ -72,16 +72,31 @@ class RPSView(nextcord.ui.View):
 class RPS(Game):
     def __init__(self, player: Inventory, guild: GuildInventory, wager: float, sql: Query, bestof: int) -> None:
         super().__init__(player, guild, wager, sql)
-        self._bestof = bestof
+        # What hand the bot threw for the round
         self._bot_hand = None
+        # What hand the player threw for the round
         self._player_hand = None
+        # The amount of rounds to play best of against the bot
         self._max_rounds = bestof
+        # The current round of the game which starts with round 1
         self._round = 1
+
+        # The amount of wins the bot has
         self._bot_wins = 0
+        # The amount of wins the player has
         self._player_wins = 0
+        # The previous round results
         self._game_record = []
         
     def _game_record_to_str(self, players_record: bool):
+        """Converts the games current record for wins and losses into a string to be used for an :class:`Embed`
+
+        Args:
+            players_record (bool): Whether to use the players record or the bots record, which is done by inverting the result
+
+        Returns:
+            :class:`str`: The game record in string format  
+        """
         if players_record:
             return ' '.join([':white_check_mark:' if win else ':x:' for win in self._game_record])
         else:
@@ -108,6 +123,11 @@ class RPS(Game):
         self._bot_hand = rps_lookup[n]
         
     def is_winner(self) -> bool | None:
+        """Compares the choices for the player and bot to find which choice wins or if there is a draw
+
+        Returns:
+            bool | None: Whether the player is the winner or not
+        """
         if self._bot_hand is None or self._player_hand is None:
             return False
         
@@ -130,6 +150,11 @@ class RPS(Game):
         return True
         
     def next_turn(self):
+        """Generates the bots choice, checks if player beat the bot then records the result, then finally checks if the game is over.
+
+        Returns:
+            _type_: _description_
+        """
         self.bots_turn()
         player_win = self.is_winner()
         
@@ -150,6 +175,11 @@ class RPS(Game):
         return True
     
     def game_over(self) -> bool:
+        """Check if the current game has reached the win conditions for either player
+
+        Returns:
+            bool: Whether the game is over or not
+        """
         rounds_remaining = self._max_rounds - self._round
 
         if rounds_remaining == 0:
@@ -158,5 +188,4 @@ class RPS(Game):
         if rounds_remaining < self._player_wins or rounds_remaining < self._bot_wins:
             return True
         
-        
-        
+        return False

@@ -124,6 +124,7 @@ dmypy.json
 .pyre/
 
 # resource files
+unit test/
 resources/
 tests/
 inventory-bot/pyvenv.cfg

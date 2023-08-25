@@ -18,7 +18,7 @@ class Game():
     def __init__(self, 
                  player: Inventory, 
                  guild: GuildInventory, 
-                 wager: Decimal, 
+                 wager: float, 
                  sql: Query) -> None:
         self._player = player
         self._guild = guild
