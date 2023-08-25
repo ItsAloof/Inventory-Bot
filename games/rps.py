@@ -104,8 +104,6 @@ class RPS(Game):
         
     def bots_turn(self):
         rps_lookup = [RPSHand.ROCK, RPSHand.PAPER, RPSHand.SCISSORS]
-        self._bot_hand = rps_lookup[0]
-        return
         n = random.randint(0, 2)
         self._bot_hand = rps_lookup[n]
         
