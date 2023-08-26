@@ -6,6 +6,7 @@ from nextcord import SlashOption, Interaction, Permissions
 from main import InventoryBot
 from games.rps import RPS, RPSView
 from games.blackjack import Blackjack, BlackjackView
+from utils.inventory import Inventory
 
 class Games(commands.Cog):
     def __init__(self, bot: InventoryBot) -> None:
@@ -31,20 +32,21 @@ class Games(commands.Cog):
     @nextcord.slash_command(name="coinflip", description="Flip a coin.", guild_ids=[1001667368801550439])
     async def coinflip(self, interaction: Interaction,
     choice: int = SlashOption(name="choice", description="Your choice", required=True, choices={"heads": 0, "tails": 1}),
-    bet: int = SlashOption(name="bet", description="How much to bet", required=False, default=0)):
-        guild = self.bot.get_guild_inventories(interaction.guild.id)
+    bet: float = SlashOption(name="bet", description="How much to bet", required=False, default=0)):
+
+        guild = self.bot.get_guild_inventory(interaction.guild.id)
         if guild:
-            inventory = guild.get_inventory(interaction.user)
+            inventory = self.bot.get_user_inventory(interaction.guild_id, interaction.user)
             coin = random.randint(0, 1)
-            if coin == choice:
+            msg = "Something went wrong!"
+            if choice == coin:
+                msg = f"You won! It was {'Heads.' if coin == 0 else 'Tails.'}" if bet == 0 else f"It was {'Heads.' if coin == 0 else 'Tails.'} You won {Inventory.format_money(guild.currency, bet)}!"
                 inventory.deposit(bet)
-                msg = f"You won! It was " + ("heads. " if choice == 0 else "tails. ") if bet == 0 else f"You won {guild.currency}{bet}! It was " + "heads" if choice == 0 else "tails"
-                await interaction.response.send_message(msg)
             else:
-                inventory.withdraw(bet)
-                msg = f"You lost! It was " + "heads. " if coin == 0 else "tails. " if bet == 0 else f"You lost {guild.currency}{bet}! It was " + "heads" if choice == 0 else "tails"
-                await interaction.response.send_message(msg)
-            self.bot.save_inventories()
+                msg = f"You lost! It was {'Heads.' if coin == 0 else 'Tails.'}" if bet == 0 else f"It was {'Heads.' if coin == 0 else 'Tails.'} You lost {Inventory.format_money(guild.currency, bet)}!"
+            
+            await interaction.send(msg)
+            self.bot.pgsql.update_user(interaction.guild_id, inventory)
             
     @nextcord.slash_command(name="blackjack", description="Play a game of blackjack", guild_ids=[1001667368801550439])
     async def blackjack(self, interaction: Interaction, wager: float = SlashOption(name="bet", description="How much you want to bet on the game", required=True)):

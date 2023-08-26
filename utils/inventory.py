@@ -72,7 +72,7 @@ class Inventory():
             str: The formatted balance
         """
 
-        return f"{currency}" + "{:,.2f}".format(balance)
+        return f"{currency}" + "{:,.2f}".format(amount)
         
     
     @property

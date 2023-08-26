@@ -105,15 +105,17 @@ class Economy(commands.Cog):
                   amount: float = SlashOption(name="pay", description="The amount of money to send", required=True)):
         
         inventory_sender = self.bot.get_user_inventory(interaction.guild_id, interaction.user)
-        if inventory_sender.balance < amount:
+        if not inventory_sender.withdraw(amount):
             await interaction.send(f"You do not have enough money to send {Inventory.format_money(inventory_sender.currency, amount)} to {user.name}")
         
         inventory_receiver = self.bot.get_user_inventory(interaction.guild_id, user)
 
-        inventory_sender.withdraw(amount)
+        
         inventory_receiver.deposit(amount)
-        self.bot.pgsql.update_user(inventory_sender)
-        self.bot.pgsql.update_user(inventory_receiver)
+        
+        self.bot.pgsql.update_user(interaction.guild_id, inventory_sender)
+        self.bot.pgsql.update_user(interaction.guild_id, inventory_receiver)
+        await interaction.send(content=f"{interaction.user.mention} sent {user.mention} {Inventory.format_money(inventory_sender.currency, amount)}")
         
         
         
