@@ -61,7 +61,7 @@ class Inventory():
     
     
     @staticmethod
-    def format_money(currency: str, balance: float) -> str:
+    def format_money(currency: str, amount: float) -> str:
         """Returns a formatted balance
 
         Args:
