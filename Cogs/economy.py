@@ -97,15 +97,29 @@ class Economy(commands.Cog):
         inventory.balance = amount
         self.bot.pgsql.update_user(interaction.guild_id, inventory)
         await interaction.send(f"Set {user.mention}'s balance to {inventory.format_balance(guild.currency)}", ephemeral=True)
-        # if guild:
-        #     inventory = guild.get_inventory(user)
-        #     if inventory:
-        #         inventory.balance = amount
-        #         self.bot.pgsql.update_user(guild.guildId, inventory)
-        #         await interaction.response.send_message(f"Set {user.mention}'s balance to {inventory.format_balance(guild.currency)}", ephemeral=True)
-        #         return
-        # await interaction.response.send_message("Could not find inventory", ephemeral=True)
         
+    @slash_command(name="pay", description="Send another player some money", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
+    async def pay(self, 
+                  interaction: Interaction, 
+                  user: User = SlashOption(name="user", description="The user to send the money to", required=True), 
+                  amount: float = SlashOption(name="pay", description="The amount of money to send", required=True)):
+        
+        inventory_sender = self.bot.get_user_inventory(interaction.guild_id, interaction.user)
+        if not inventory_sender.withdraw(amount):
+            await interaction.send(f"You do not have enough money to send {Inventory.format_money(inventory_sender.currency, amount)} to {user.name}")
+        
+        inventory_receiver = self.bot.get_user_inventory(interaction.guild_id, user)
+
+        
+        inventory_receiver.deposit(amount)
+        
+        self.bot.pgsql.update_user(interaction.guild_id, inventory_sender)
+        self.bot.pgsql.update_user(interaction.guild_id, inventory_receiver)
+        await interaction.send(content=f"{interaction.user.mention} sent {user.mention} {Inventory.format_money(inventory_sender.currency, amount)}")
+        
+        
+        
+                
     @slash_command(name="setcurrency", description="Set the currency for the server", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
     async def setcurrency(self, interaction: Interaction, currency: str = SlashOption(name="currency", description="The currency to use for the server", required=True, max_length=5)):
         guild = self.bot.get_guild_inventory(guild_id=interaction.guild_id)

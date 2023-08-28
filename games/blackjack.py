@@ -54,8 +54,14 @@ class HitButton(nextcord.ui.Button):
         self.game.hit()
         self.win_msg = None
         
-        if not self.game.game_over():
-            await interaction.response.edit_message(view=self.view, embed=self.game.game_embed())
+        if self.game.game_over():
+            assert self.view is not None
+            self.view: BlackjackView
+            
+            self.view.hit_btn.disabled = True
+            self.view.stand_btn.disabled = True
+            
+        await interaction.response.edit_message(view=self.view, embed=self.game.game_embed())
     
 class Blackjack(Game):
     children = []
