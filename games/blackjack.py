@@ -235,7 +235,7 @@ class Blackjack(Game):
 
         # Add dealer's upcard information using emojis and card values
         dealer_hand_string = " ".join([f"{self.deck[card]['value']}{self.deck[card]['emoji']}" for card in self.dealer_hand])
-        embed.add_field(name="Dealer's Hand", value=f"{dealer_hand_string}", inline=False)
+        embed.add_field(name="Dealer's Hand", value=f"{dealer_hand_string}\nTotal Value: {self.sum_cards(self.dealer_hand)}", inline=False)
         
         if self.gamestate == GameState.WON:
             name = "Blackjack! You win!" if self._player_bj else "Congrats you win!"
