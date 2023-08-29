@@ -52,6 +52,11 @@ class Game():
         
     @property
     def gamestate(self):
+        """The state of the game using type `GameState`
+
+        Returns:
+            `GameState`: The current state of the game
+        """
         return self._gamestate
     
     @gamestate.setter
@@ -62,6 +67,8 @@ class Game():
         self._gamestate = value
         
     def payout(self):
+        """Payout the wager if the player won or withdrawl the wager if the player lost and update the user in the database
+        """
         if self._gamestate == GameState.WON:
             self._player.deposit(self._wager)
         elif self._gamestate == GameState.LOST:
