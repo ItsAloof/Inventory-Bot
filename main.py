@@ -11,6 +11,8 @@ import os
 from utils.guild import GuildInventory
 from utils.inventory import Inventory
 
+TEST_GUILDS = [1001667368801550439]
+
 class InventoryBot(commands.Bot):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -144,12 +146,15 @@ def _load_config(filename="config.ini", section="discord"):
     return dict(parser.items(section)).get('public-key')
 
 def main():
-    # key = _load_config()
+    key = os.getenv('DISCORD_PUBLIC_KEY')
+    
+    if key is None:
+        key = _load_config()
     # Create the bot
     bot = InventoryBot(intents=nextcord.Intents.all(), status=nextcord.Status.online, activity=nextcord.Game("InventoryBot"))
 
     # Run the bot
-    bot.run(os.getenv('DISCORD_PUBLIC_KEY'), reconnect=True)
+    bot.run(key, reconnect=True)
 
 if __name__ == "__main__":
     main()
