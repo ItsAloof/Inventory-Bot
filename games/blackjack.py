@@ -139,22 +139,55 @@ class Blackjack(Game):
         self.setup()
 
     def setup(self):
+        """Setup the blackjack game by giving the player their two cards and the dealer one upcard
+        """
         self._player_hand.extend([self.draw_card(), self.draw_card()])
         self._dealer_hand.append(self.draw_card())
     
-    def draw_card(self):
+    def draw_card(self) -> str:
+        """Draw a card from the game deck
+
+        Returns:
+            `str`: The card drawn from the deck
+        """
         return self.game_deck.pop()
         
     def suit_to_emoji(self, card: str):
+        """Converts a card to its emoji format
+
+        Args:
+            card (str): The card to get the emoji for
+
+        Returns:
+            `str`: The emoji
+        """
         return self.deck.get(card)['emoji']
     
     def get_card_value(self, card: str):
+        """Gets the value of the card
+
+        Args:
+            card (str): The card to get the value for
+
+        Returns:
+            `int`: The value of the card
+        """
         return self.deck.get(card)['value']
     
     def sum_cards(self, hand: List[str]):
+        """Get the total value of all cards in the dealer or players hand
+
+        Args:
+            hand (List[str]): The hand to get the total value of
+
+        Returns:
+            `int`: The total value of the current hand
+        """
         return sum([self.get_card_value(card) for card in hand])
     
     def dealers_turn(self):
+        """Run the dealers turn
+        """
         while(self.sum_cards(self.dealer_hand) < 17):
             self.hit(False)
         
@@ -166,6 +199,11 @@ class Blackjack(Game):
         
     
     def game_over(self) -> bool:
+        """Check for game over conditions
+
+        Returns:
+            `bool`: Wether the game is over or not
+        """
         player_value = self.sum_cards(self.player_hand)
         
         if player_value > 21:
