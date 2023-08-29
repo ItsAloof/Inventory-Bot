@@ -1,5 +1,5 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:us-east-2:943873185017:task-definition/inventory-bot-task:1",
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:943873185017:task-definition/inventory-bot-tasks:1",
     "containerDefinitions": [
         {
             "name": "inventory-bot",
@@ -24,20 +24,21 @@
             ],
             "mountPoints": [],
             "volumesFrom": [],
+            "readonlyRootFilesystem": false,
             "ulimits": [],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
                     "awslogs-create-group": "true",
-                    "awslogs-group": "/ecs/inventory-bot-task",
-                    "awslogs-region": "us-east-2",
+                    "awslogs-group": "/ecs/inventory-bot-tasks",
+                    "awslogs-region": "us-east-1",
                     "awslogs-stream-prefix": "ecs"
                 },
                 "secretOptions": []
             }
         }
     ],
-    "family": "inventory-bot-task",
+    "family": "inventory-bot-tasks",
     "taskRoleArn": "arn:aws:iam::943873185017:role/ecsTaskExecutionRole",
     "executionRoleArn": "arn:aws:iam::943873185017:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
@@ -90,7 +91,7 @@
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     },
-    "registeredAt": "2023-08-29T02:52:42.455Z",
+    "registeredAt": "2023-08-29T03:48:12.748Z",
     "registeredBy": "arn:aws:iam::943873185017:root",
     "tags": []
 }
