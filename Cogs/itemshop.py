@@ -27,9 +27,9 @@ class ItemShop(commands.Cog):
     async def editor(self, interaction: Interaction):
         guild = self.bot.get_guild_inventory(interaction.guild_id)
         if guild.itemShop.item_count == 0:
-            await interaction.send(content="There currently are not any items available in the itemshop")
+            await interaction.send(content="There currently are not any items available in the itemshop", ephemeral=True)
             return
-        await interaction.send(view=EditorView(guild=guild, sql=self.bot.pgsql))
+        await interaction.send(view=EditorView(guild=guild, sql=self.bot.pgsql), ephemeral=True)
     
     @shopeditor.subcommand(name='add', description='Add an item to the itemshop')
     async def add(self, interaction: Interaction, name: str = SlashOption(name="name", description="The name of the item", required=True),

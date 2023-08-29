@@ -96,11 +96,10 @@ class EditorView(nextcord.ui.View):
     def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory, sql: Query) -> None:
         super().__init__(timeout=timeout, auto_defer=auto_defer)
         self.guild = guild
-        if len(guild.itemShop) > 0:
-            self.add_item(ItemSelector(guild=guild, custom_id=f"editor-view-{guild.guildId}"))
+        self.add_item(ItemSelector(guild=guild, custom_id=f"editor-view-{guild.guildId}"))
         
         self.sql = sql
-        self._selected_item = None
+        self._selected_item: Item | None = None
 
 class ItemShopView(nextcord.ui.View):
     def __init__(self, *, timeout: float | None = 180, auto_defer: bool = True, guild: GuildInventory, sql: Query, user: Inventory) -> None:
@@ -109,7 +108,7 @@ class ItemShopView(nextcord.ui.View):
         self.sql = sql
         self.guild = guild
         self.user = user
-        self._selected_item = None
+        self._selected_item: Item | None = None
 
 class EditModal(nextcord.ui.Modal):
     def __init__(self, title: str, *, timeout: float | None = None, custom_id: str = "inventory-bot-editmodal", auto_defer: bool = True, item: Item, guild: GuildInventory, update: Callable) -> None:
@@ -138,7 +137,7 @@ class EditModal(nextcord.ui.Modal):
         self.item.name = self.name.value
         self.item.description = self.description.value
         self.update_guild(self.guild)
-        await interaction.send(embed=EmbedCreator.item_embed(self.item, self.guild.currency))
+        await interaction.response.edit_message(embed=EmbedCreator.item_embed(self.item, self.guild.currency))
         
         
 class EditButton(nextcord.ui.Button):
@@ -163,7 +162,7 @@ class DeleteButton(nextcord.ui.Button):
             return
         item = self.view._selected_item
         self.view._selected_item = None
-        self.view.guild.remove_item(item)
+        self.view.guild.itemShop.remove_item(item)
         self.view.sql.update_guild(guild=self.view.guild)
         
         await interaction.send(content="Successfully Deleted Item:", embed=EmbedCreator.item_embed(item, self.view.guild.currency))
