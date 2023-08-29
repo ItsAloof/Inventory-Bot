@@ -25,7 +25,7 @@ class Query():
             db['database'] = os.getenv('DATABASE')
             db['user'] = os.getenv('USER')
             db['password'] = os.getenv('PASSWORD')
-            raise Exception('Section {0} not found in the {1} file'.format(section, filename))
+            # raise Exception('Section {0} not found in the {1} file'.format(section, filename))
         
         return db
 
