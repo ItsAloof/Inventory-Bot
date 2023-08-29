@@ -1,9 +1,9 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:us-east-1:943873185017:task-definition/InventoryBotTask:2",
+    "taskDefinitionArn": "arn:aws:ecs:us-east-2:943873185017:task-definition/inventory-bot-task:1",
     "containerDefinitions": [
         {
             "name": "inventory-bot",
-            "image": "public.ecr.aws/b8h8n5h7/inventorybot",
+            "image": "943873185017.dkr.ecr.us-east-1.amazonaws.com/inventory-bot",
             "cpu": 0,
             "portMappings": [
                 {
@@ -29,18 +29,19 @@
                 "logDriver": "awslogs",
                 "options": {
                     "awslogs-create-group": "true",
-                    "awslogs-group": "/ecs/InventoryBotTask",
-                    "awslogs-region": "us-east-1",
+                    "awslogs-group": "/ecs/inventory-bot-task",
+                    "awslogs-region": "us-east-2",
                     "awslogs-stream-prefix": "ecs"
                 },
                 "secretOptions": []
             }
         }
     ],
-    "family": "InventoryBotTask",
+    "family": "inventory-bot-task",
+    "taskRoleArn": "arn:aws:iam::943873185017:role/ecsTaskExecutionRole",
     "executionRoleArn": "arn:aws:iam::943873185017:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
-    "revision": 2,
+    "revision": 1,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -58,6 +59,9 @@
         },
         {
             "name": "ecs.capability.env-files.s3"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.task-iam-role"
         },
         {
             "name": "ecs.capability.execution-role-ecr-pull"
@@ -86,7 +90,7 @@
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     },
-    "registeredAt": "2023-08-29T00:19:13.981Z",
+    "registeredAt": "2023-08-29T02:52:42.455Z",
     "registeredBy": "arn:aws:iam::943873185017:root",
     "tags": []
 }
