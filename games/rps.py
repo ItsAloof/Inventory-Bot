@@ -103,6 +103,11 @@ class RPS(Game):
             return ' '.join([':white_check_mark:' if not win else ':x:' for win in self._game_record])
         
     def game_embed(self) -> Embed:
+        """The Embed that is displayed while playing the game in Discord
+
+        Returns:
+            Embed: The Embed to be returned
+        """
         embed = Embed(color=self.gamestate.value, title=f"{self.player.name} VS AloofBot in Rock, Paper, Scissors!", description=f"Round {self._round} of {self._max_rounds}")
         embed.add_field(name=f"{self.player.name} Wins", value=self._game_record_to_str(True))
         embed.add_field(name=f"AloofBot Wins", value=self._game_record_to_str(False))
@@ -121,6 +126,8 @@ class RPS(Game):
         
         
     def bots_turn(self):
+        """Generates a random choice for the bot
+        """
         rps_lookup = [RPSHand.ROCK, RPSHand.PAPER, RPSHand.SCISSORS]
         n = random.randint(0, 2)
         self._bot_hand = rps_lookup[n]
