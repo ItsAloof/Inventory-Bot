@@ -2,7 +2,7 @@
     "taskDefinitionArn": "arn:aws:ecs:us-east-1:943873185017:task-definition/InventoryBotTask:2",
     "containerDefinitions": [
         {
-            "name": "inventorybot",
+            "name": "inventory-bot",
             "image": "public.ecr.aws/b8h8n5h7/inventorybot",
             "cpu": 0,
             "portMappings": [
