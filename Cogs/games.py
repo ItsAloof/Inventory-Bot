@@ -7,12 +7,13 @@ from main import InventoryBot
 from games.rps import RPS, RPSView
 from games.blackjack import Blackjack, BlackjackView
 from utils.inventory import Inventory
+from main import TEST_GUILDS
 
 class Games(commands.Cog):
     def __init__(self, bot: InventoryBot) -> None:
         self.bot = bot
 
-    @nextcord.slash_command(name="rps", description="Play a game of Rock, Paper, Scissors against a bot")
+    @nextcord.slash_command(name="rps", description="Play a game of Rock, Paper, Scissors against a bot", guild_ids=TEST_GUILDS)
     async def rps(self, 
                   interaction: Interaction, 
                   wager: float = SlashOption(name="bet", description="The amount of money you wish to bet", required=True), 
@@ -29,7 +30,7 @@ class Games(commands.Cog):
         await interaction.send(view=RPSView(timeout=300, rps_game=game), embed=game.game_embed())
 
     
-    @nextcord.slash_command(name="coinflip", description="Flip a coin.", guild_ids=[1001667368801550439])
+    @nextcord.slash_command(name="coinflip", description="Flip a coin.", guild_ids=TEST_GUILDS)
     async def coinflip(self, interaction: Interaction,
     choice: int = SlashOption(name="choice", description="Your choice", required=True, choices={"heads": 0, "tails": 1}),
     bet: float = SlashOption(name="bet", description="How much to bet", required=False, default=0)):
@@ -48,7 +49,7 @@ class Games(commands.Cog):
             await interaction.send(msg)
             self.bot.pgsql.update_user(interaction.guild_id, inventory)
             
-    @nextcord.slash_command(name="blackjack", description="Play a game of blackjack", guild_ids=[1001667368801550439])
+    @nextcord.slash_command(name="blackjack", description="Play a game of blackjack", guild_ids=TEST_GUILDS)
     async def blackjack(self, interaction: Interaction, wager: float = SlashOption(name="bet", description="How much you want to bet on the game", required=True)):
         
         inventory = self.bot.get_user_inventory(interaction.guild_id, interaction.user)

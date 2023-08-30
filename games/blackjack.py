@@ -21,9 +21,65 @@ class BlackjackView(nextcord.ui.View):
         self.game = blackjack
         self.hit_btn = HitButton(game=blackjack)
         self.stand_btn = StandButton(game=blackjack)
-        self.add_item(self.hit_btn)
-        self.add_item(self.stand_btn)
-
+        self.ace1_btn = None
+        self.ace11_btn = None
+        
+        if not self.game.game_over():
+            self.add_item(self.hit_btn)
+            self.add_item(self.stand_btn)
+        else:
+            self.game.payout()
+            return
+        
+        self.handle_ace()
+            
+    def handle_ace(self):
+        if self.ace11_btn is not None:
+            self.children.remove(self.ace11_btn)
+            self.ace11_btn = None
+        if self.ace1_btn is not None:
+            self.children.remove(self.ace1_btn)
+            self.ace11_btn = None
+            
+        ace = self.game.player_hand.has_ace()
+        if ace is not None:
+            # Button for selecting a value of 1 for Aces
+            self.ace1_btn = AceValueButton(custom_id="ace1-select-button", card=ace)
+            self.ace11_btn = AceValueButton(custom_id="ace11-select-button", card=ace, value=11)
+            self.add_item(self.ace11_btn)
+            self.add_item(self.ace1_btn)
+            self.hit_btn.disabled = True
+            self.stand_btn.disabled = True
+        elif self.game.game_over():
+            return
+        else:
+            self.hit_btn.disabled = False
+            self.stand_btn.disabled = False
+        
+class AceValueButton(nextcord.ui.Button):
+    def __init__(self, *, style: ButtonStyle = ButtonStyle.blurple, label: str | None = None, disabled: bool = False, custom_id: str | None = "ace-value-select", url: str | None = None, 
+                 emoji: str | Emoji | PartialEmoji | None = None, 
+                 row: int | None = 1, value: int = 1, card: 'Card') -> None:
+        label = f'Ace = {value}'
+        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+        self._value = value
+        self._card = card
+        
+    async def callback(self, interaction: Interaction) -> None:
+        assert self.view is not None
+        self.view: BlackjackView
+        self.game = self.view.game
+        
+        self._card.value = self._value
+        self._card.is_ace = False
+        
+        self.game.game_over()
+        self.game.payout()
+        self.view.handle_ace()
+        await interaction.response.edit_message(view=self.view, embed=self.game.game_embed())
+        
+        
+        
 class StandButton(nextcord.ui.Button):
     def __init__(self, *, style: ButtonStyle = ButtonStyle.secondary, label: str | None = "Stand", disabled: bool = False, custom_id: str | None = None, url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = 2, game: 'Blackjack') -> None:
         super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
@@ -52,16 +108,100 @@ class HitButton(nextcord.ui.Button):
         
     async def callback(self, interaction: Interaction) -> None:
         self.game.hit()
-        self.win_msg = None
+        if self.game.player_hand.has_ace() is not None:
+            self.view.handle_ace()
         
         if self.game.game_over():
             assert self.view is not None
             self.view: BlackjackView
-            
+            self.game.payout()
             self.view.hit_btn.disabled = True
             self.view.stand_btn.disabled = True
             
         await interaction.response.edit_message(view=self.view, embed=self.game.game_embed())
+        
+class Hand():
+    def __init__(self, cards: List['Card'] = None) -> None:
+        self._cards = cards
+        
+    @property
+    def cards(self):
+        return self._cards
+    
+    def add_card(self, card: 'Card'):
+        self._cards.append(card)
+    
+    @property
+    def card_count(self):
+        return len(self._cards)
+    
+    def has_ace(self):
+        for card in self._cards:
+            if card.is_ace:
+                return card
+        
+        return None
+    
+    @property
+    def value(self):
+        return sum([card.value for card in self._cards])
+    
+    def is_bust(self):
+        return self.value > 21
+        
+    def has_blackjack(self) -> bool:
+        if self.card_count > 2:
+            return False
+        
+        ace = self.has_ace()
+        if ace is None:
+            return False
+        
+        ace.value = 11
+        if self.value == 21:
+            return True
+
+        ace.value = 1
+        return False
+    
+    def __str__(self) -> str:
+        return " ".join([str(card) for card in self._cards])
+        
+                
+
+class Card():
+    def __init__(self, name: str, value: int, emoji: str) -> None:
+        self._name = name
+        self._value = value
+        self._emoji = emoji
+        self._is_ace = True if value == 1 else False
+        
+    @property
+    def is_ace(self):
+        return self._is_ace
+    
+    @is_ace.setter
+    def is_ace(self, value: bool):
+        self._is_ace = value
+    
+    @property
+    def name(self):
+        return self._name
+        
+    @property
+    def value(self):
+        return self._value
+    
+    @value.setter
+    def value(self, value: int):
+        self._value = value
+    
+    @property
+    def emoji(self):
+        return self._emoji
+    
+    def __str__(self) -> str:
+        return f'{self.value}{self.emoji}'
     
 class Blackjack(Game):
     children = []
@@ -125,15 +265,16 @@ class Blackjack(Game):
 
     def __init__(self, player: Inventory, guild: GuildInventory, wager: float, sql: Query) -> None:
         super().__init__(player, guild, wager, sql)
-        self._player_hand = []
-        self._dealer_hand = []
+        self._player_hand: Hand = None
+        self._dealer_hand: Hand = None
         self.game_deck = []
         self._players_turn = True
         self._dealer_bj = False
         self._player_bj = False
+        self._down_card = None
         
-        for i in range(3):
-            self.game_deck.extend(list(self.deck.keys()))
+        self.game_deck.extend([Card(name=key, **self.deck.get(key)) for key in self.deck.keys()])
+        
         random.shuffle(self.game_deck)
 
         self.setup()
@@ -141,8 +282,9 @@ class Blackjack(Game):
     def setup(self):
         """Setup the blackjack game by giving the player their two cards and the dealer one upcard
         """
-        self._player_hand.extend([self.draw_card(), self.draw_card()])
-        self._dealer_hand.append(self.draw_card())
+        self._player_hand = Hand([self.draw_card(), self.draw_card()])
+        self._dealer_hand = Hand([self.draw_card()])
+        self._down_card = self.draw_card()
     
     def draw_card(self) -> str:
         """Draw a card from the game deck
@@ -151,51 +293,19 @@ class Blackjack(Game):
             `str`: The card drawn from the deck
         """
         return self.game_deck.pop()
-        
-    def suit_to_emoji(self, card: str):
-        """Converts a card to its emoji format
-
-        Args:
-            card (str): The card to get the emoji for
-
-        Returns:
-            `str`: The emoji
-        """
-        return self.deck.get(card)['emoji']
-    
-    def get_card_value(self, card: str):
-        """Gets the value of the card
-
-        Args:
-            card (str): The card to get the value for
-
-        Returns:
-            `int`: The value of the card
-        """
-        return self.deck.get(card)['value']
-    
-    def sum_cards(self, hand: List[str]):
-        """Get the total value of all cards in the dealer or players hand
-
-        Args:
-            hand (List[str]): The hand to get the total value of
-
-        Returns:
-            `int`: The total value of the current hand
-        """
-        return sum([self.get_card_value(card) for card in hand])
     
     def dealers_turn(self):
         """Run the dealers turn
         """
-        while(self.sum_cards(self.dealer_hand) < 17):
+        self.dealer_hand.add_card(self._down_card)
+        while(self.dealer_hand.value < 17):
             self.hit(False)
         
     def hit(self, player: bool = True):
         if player:
-            self.player_hand.append(self.draw_card())
+            self.player_hand.add_card(self.draw_card())
         else:
-            self.dealer_hand.append(self.draw_card())
+            self.dealer_hand.add_card(self.draw_card())
         
     
     def game_over(self) -> bool:
@@ -204,53 +314,44 @@ class Blackjack(Game):
         Returns:
             `bool`: Wether the game is over or not
         """
-        player_value = self.sum_cards(self.player_hand)
-        
-        if player_value > 21:
-            self.gamestate = GameState.LOST
-            return True
-        
-        if player_value == 21:
-            self._player_bj = True
-            self.wager *= 2
-            self.hit(False)
-            if self.sum_cards(self.dealer_hand) == 21:
+        if self.player_hand.has_blackjack():
+            self.dealer_hand.add_card(self._down_card)
+            if self.dealer_hand.has_blackjack():
                 self.gamestate = GameState.DRAW
-                self._dealer_bj = True
                 return True
             else:
                 self.gamestate = GameState.WON
+                self._player_bj = True
+                self.wager = round(self.wager * 1.5, 2)
                 return True
         
+        if self.player_hand.is_bust():
+            self.gamestate = GameState.LOST
+            return True
         
         if self._players_turn:
             return False
-
-        self.dealers_turn()
-        dealer_value = self.sum_cards(self.dealer_hand)
         
-        if dealer_value == 21:
+        self.dealers_turn()
+        
+        if self.dealer_hand.has_blackjack():
             self.gamestate = GameState.LOST
             self._dealer_bj = True
             return True
         
-        if dealer_value > 21:
+        if self.dealer_hand.is_bust():
             self.gamestate = GameState.WON
             return True
         
-        if dealer_value > player_value:
+        if self.dealer_hand.value > self.player_hand.value:
             self.gamestate = GameState.LOST
-            return True
-        
-        if dealer_value == player_value:
-            self.gamestate = GameState.DRAW
-            return True
-        
-        if player_value < 21 and player_value > dealer_value:
+        elif self.dealer_hand.value < self.player_hand.value:
             self.gamestate = GameState.WON
-            return True
+        else:
+            self.gamestate = GameState.DRAW
+
+        return True
         
-        return False
 
     @property
     def player_hand(self):
@@ -259,10 +360,8 @@ class Blackjack(Game):
     @property
     def dealer_hand(self):
         return self._dealer_hand
-
-    def start(self):
-        pass
-
+    
+    
     def game_embed(self, timestamp=None):
         # Create an embed instance
         embed = Embed(title="Blackjack Game", color=self.gamestate.value)
@@ -273,20 +372,23 @@ class Blackjack(Game):
         embed.timestamp = timestamp
 
         # Add player's hand information using emojis and card values
-        player_hand_string = " ".join([f"{self.deck[card]['value']}{self.deck[card]['emoji']}" for card in self.player_hand])
-        player_hand_value = sum([self.deck[card]["value"] for card in self.player_hand])
-        embed.add_field(name="Your Hand", value=f"{player_hand_string}\nTotal Value: {player_hand_value}", inline=False)
+        embed.add_field(name="Your Hand", value=f"{str(self.player_hand)}\nTotal Value: {self.player_hand.value}", inline=False)
 
         # Add dealer's upcard information using emojis and card values
-        dealer_hand_string = " ".join([f"{self.deck[card]['value']}{self.deck[card]['emoji']}" for card in self.dealer_hand])
-        embed.add_field(name="Dealer's Hand", value=f"{dealer_hand_string}\nTotal Value: {self.sum_cards(self.dealer_hand)}", inline=False)
+        embed.add_field(name="Dealer's Hand", value=f"{str(self.dealer_hand)}\nTotal Value: {self.dealer_hand.value}", inline=False)
         
         if self.gamestate == GameState.WON:
-            name = "Blackjack! You win!" if self._player_bj else "Congrats you win!"
+            if self.dealer_hand.is_bust():
+                name = "Dealer busted!"
+            else:
+                name = "Blackjack! You win!" if self._player_bj else "Congrats you win!"
             value = f"You win {Inventory.format_money(self.guild.currency, self.wager)}"
             embed.add_field(name=name, value=value, inline=False)
         elif self.gamestate == GameState.LOST:
-            name = "The dealer had Blackjack! You lose!" if self._dealer_bj else "The dealer has a better hand, you lose"
+            if self.player_hand.is_bust():
+                name = "You busted!"
+            else:
+                name = "The dealer had Blackjack!" if self._dealer_bj else "The dealer has a better hand!"
             value = f"You lose {Inventory.format_money(self.guild.currency, self.wager)}"
             embed.add_field(name=name, value=value, inline=False)
         elif self.gamestate == GameState.DRAW:

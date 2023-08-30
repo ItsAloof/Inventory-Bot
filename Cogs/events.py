@@ -11,6 +11,7 @@ class Events(commands.Cog):
     async def on_guild_join(self, guild: Guild):
         guild_inventory = self.bot._create_guild_inventory(guild)
         self.bot.guildInventories[guild.id] = guild_inventory
+        
 
 
 def setup(bot: InventoryBot):

@@ -5,13 +5,14 @@ from nextcord.application_command import slash_command
 from main import InventoryBot
 from utils.item import Item
 from utils.ui import EmbedCreator, EditUserInventoryView, ItemSelectorType
+from main import TEST_GUILDS
 
 class InventoryCmd(commands.Cog):
     def __init__(self, bot: InventoryBot):
         self.bot = bot
     
     
-    @slash_command(name="inventory", description="View your inventory", guild_ids=[1001667368801550439])
+    @slash_command(name="inventory", description="View your inventory", guild_ids=TEST_GUILDS)
     async def inventory(self, interaction: Interaction, user: User = SlashOption(name="user", description="The user to view the inventory of", required=False)):
         inventory = self.bot.get_user_inventory(interaction.guild_id, user if user is not None else interaction.user)
         embeds = EmbedCreator.many_item_embeds(inventory.items, inventory.currency)
@@ -26,7 +27,7 @@ class InventoryCmd(commands.Cog):
             await interaction.response.send_message(content=f"**{inventory.name}'s Inventory**", embeds=embeds)
 
 
-    @slash_command(name="additem", description="Add an item to your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
+    @slash_command(name="additem", description="Add an item to your inventory", guild_ids=TEST_GUILDS, default_member_permissions=Permissions(administrator=True))
     async def additem(self, interaction: Interaction, user: User = SlashOption(name="user", description="The user to give the item", required=True)):
         guild = self.bot.get_guild_inventory(interaction.guild_id)
         user = self.bot.get_user_inventory(guild.guildId, user)
@@ -42,7 +43,7 @@ class InventoryCmd(commands.Cog):
         await interaction.send(view=EditUserInventoryView(user=user, guild=guild, selectorType=ItemSelectorType.ADD_ITEM, sql=self.bot.pgsql))
         
 
-    @slash_command(name="removeitem", description="Remove an item from your inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
+    @slash_command(name="removeitem", description="Remove an item from your inventory", guild_ids=TEST_GUILDS, default_member_permissions=Permissions(administrator=True))
     async def removeitem(self, interaction: Interaction, user: User = SlashOption(name="user", description="The user to remove an item from", required=True)):
         inventory = self.bot.get_user_inventory(interaction.guild_id, user)
         guild = self.bot.get_guild_inventory(interaction.guild.id)
@@ -59,7 +60,7 @@ class InventoryCmd(commands.Cog):
         await interaction.send(view=EditUserInventoryView(user=inventory, guild=guild, selectorType=ItemSelectorType.REMOVE_ITEM, sql=self.bot.pgsql))
         
 
-    @slash_command(name="clearinventory", description="Clear your or another users inventory", guild_ids=[1001667368801550439], default_member_permissions=Permissions(administrator=True))
+    @slash_command(name="clearinventory", description="Clear your or another users inventory", guild_ids=TEST_GUILDS, default_member_permissions=Permissions(administrator=True))
     async def clearinventory(self, interaction: Interaction, username: User = SlashOption(name="user", description="The user to clear the inventory of", required=False)):
         user = interaction.user if not username else username
         inventory = self.bot.get_user_inventory(interaction.guild_id, user)
@@ -75,7 +76,7 @@ class InventoryCmd(commands.Cog):
         await interaction.response.send_message(msg, ephemeral=True)
         
         
-    @slash_command(name="maxitems", description="Set the max items for the guild", default_member_permissions=Permissions(administrator=True))
+    @slash_command(name="maxitems", description="Set the max items for the guild", guild_ids=TEST_GUILDS, default_member_permissions=Permissions(administrator=True))
     async def maxitems(self, interaction: Interaction, maxitems: int = SlashOption(name="maxitems", description="The max items to set", required=True)):
         guild = self.bot.get_guild_inventory(interaction.guild.id)
 
