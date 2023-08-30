@@ -146,10 +146,10 @@ def _load_config(filename="config.ini", section="discord"):
     return dict(parser.items(section)).get('public-key')
 
 def main():
-    # key = os.getenv('DISCORD_PUBLIC_KEY')
+    key = os.getenv('DISCORD_PUBLIC_KEY')
     
-    # if key is None:
-    key = _load_config()
+    if key is None:
+        key = _load_config()
     # Create the bot
     bot = InventoryBot(intents=nextcord.Intents.all(), status=nextcord.Status.online, activity=nextcord.Game("InventoryBot"))
 
