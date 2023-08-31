@@ -44,8 +44,39 @@ Slash commands available for use with the bot
   * ```/maxinventory [amount]``` - Allows admins to set the max inventory size for a guild *(defaults to no limit)*
 
 ## TODO
-- [ ] Add games
+
+### Bot Features
+#### Commands
+- [x] Blackjack and Rock, Paper, Scissors
   - Games so that users can make money
+- [ ] More Games
+  - [ ] Poker
+  - [ ] Pet Battles
+    - Purchase and train pets to fight different tiers of enemies
+    - Death results in lose of pet
+    - Higher level pet can fight higher level creatures with less chance to die, with greater rewards
+- [ ] Refine work command
+  - Command cooldown
+  - Upgrades to generate more revenue
+    - Item that increaases chance to generate more money
+- [ ] Add illicit work command
+  - High risk high reward command
+  - Chance to lose money instead of make money
+- [ ] Add trade command
+#### Items
+- [ ] Add ability to create items
+- [ ] Item effects
+  - Certain items can be given effects that can contribute to bonuses for commands, or have trade value
+- [ ] Pets
+  - [ ] Pet training
+  - [ ] Pet combat
+  - [ ] Pet skills
+
+#### Website
 - [ ] Add Bot website
   - A place to add bot to Discord servers
   - Along with a dashboard for editing guild settings
+- [ ] Premium upgrade for guilds
+  - [ ] Personal guild page
+  - [ ] Shop page for users to interact with and purchase items
+  - [ ] Visualizer for user inventories for crafting, trading, etc.
